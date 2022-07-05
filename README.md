@@ -23,5 +23,5 @@ cargo clippy --all --all-targets --release
 
 ### Test
 ```
-cargo test -all
+TEST_CONFIG=test_config_example.json cargo test --all
 ```
