@@ -7,47 +7,55 @@ on:
     branches: ["main"]
 
 jobs:
-  lints:
-    name: rustfmt & clippy
-    runs-on: ubuntu-latest
+  rustfmt:
+    runs-on: 'ubuntu-latest'
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+          toolchain: nightly
+          components: rustfmt
 
-      - name: Run cargo fmt
+      - uses: actions/checkout@v3
+
+      - name: Cargo fmt
         uses: actions-rs/cargo@v1
         with:
+          toolchain: nightly
           command: fmt
           args: --all -- --check
 
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-  test:
-    name: cargo test
-    runs-on: ubuntu-latest
+  clippy:
+    runs-on: 'ubuntu-latest'
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-          override: true
+          components: clippy
 
-      - name: Run cargo test
+      - uses: actions/checkout@v3
+
+      - name: Cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          toolchain: stable
+          command: clippy
+          args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
+     
+
+    
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose
+      - name: Pull docker image
+        run: docker pull docker.io/achimcc/ink-backend:latest
+      - name: Tag docker image
+        run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
+      - name: Run tests
+        run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
