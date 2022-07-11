@@ -1,7 +1,7 @@
 name: Rust
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "develop-grt"]
   pull_request:
     branches: ["main"]
 
@@ -43,8 +43,6 @@ jobs:
           toolchain: stable
           command: clippy
           args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
-
-
 
   test:
     runs-on: ubuntu-latest

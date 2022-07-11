@@ -7,10 +7,7 @@ mod simple_counter_with_hashmap {
 
     /// To use hashmap(Mapping)
     /// ink_storage::Mapping is more optimised than ink_prelude::collections::HashMap
-    use ink_storage::{
-        traits::SpreadAllocate,
-        Mapping,
-    };
+    use ink_storage::{traits::SpreadAllocate, Mapping};
 
     /// Auth is a mapping(address => isMember)
     #[ink(storage)]
@@ -46,7 +43,7 @@ mod simple_counter_with_hashmap {
     impl Counter {
         #[ink(constructor)]
         pub fn new(count: u64, first_auth: AccountId) -> Self {
-            ink_lang::utils::initialize_contract(|contract: &mut Self|{
+            ink_lang::utils::initialize_contract(|contract: &mut Self| {
                 contract.owner = contract.env().caller();
                 contract.count = count;
                 contract.auth.insert(first_auth, &true);
@@ -56,12 +53,12 @@ mod simple_counter_with_hashmap {
 
         /// Check whether a caller is the owner or not
         fn _ensure_caller_is_owner(&self) {
-            let caller =  self.env().caller();
+            let caller = self.env().caller();
             assert!(caller == self.owner);
             if caller != self.owner {
                 panic!("caller is not owner!")
             }
-        } 
+        }
 
         /// Check whether a caller is auth or not
         fn _ensure_caller_is_auth(&self) {
@@ -71,7 +68,6 @@ mod simple_counter_with_hashmap {
                 panic!("caller is not auth!")
             }
         }
-
 
         /// Only contract owner can set the first auth.
         #[ink(message)]
@@ -93,7 +89,7 @@ mod simple_counter_with_hashmap {
         pub fn transfer_ownership(&mut self, to: AccountId) -> Result<()> {
             self._ensure_caller_is_owner();
 
-            if to == AccountId::from([0x00;32]) || to == self.owner {
+            if to == AccountId::from([0x00; 32]) || to == self.owner {
                 return Err(Error::AccountIdIsNotValid);
             }
 
@@ -133,14 +129,14 @@ mod simple_counter_with_hashmap {
 
         /// execute a transaction
         #[ink(message)]
-        pub fn execute_tx(&mut self, value: u64) ->Result<u64> {
+        pub fn execute_tx(&mut self, value: u64) -> Result<u64> {
             self._ensure_caller_is_auth();
 
             if value > 10 {
                 return Err(Error::TxValueIsNotValid);
             }
             self.count += value;
-            self.env().emit_event(Transaction{value});
+            self.env().emit_event(Transaction { value });
 
             Ok(value)
         }
@@ -157,7 +153,6 @@ mod simple_counter_with_hashmap {
         pub fn decrement(&mut self) {
             self._ensure_caller_is_auth();
             self.count -= 1;
-
         }
 
         /// reset
@@ -178,7 +173,7 @@ mod simple_counter_with_hashmap {
         pub fn get_auth_count(&self) -> u64 {
             self.auth_count
         }
-        
+
         /// return whether caller is auth(true) or not(false)
         #[ink(message)]
         pub fn is_auth(&self) -> bool {
@@ -190,7 +185,6 @@ mod simple_counter_with_hashmap {
         pub fn is_auth_account_id(&self, account_id: AccountId) -> bool {
             self.auth.contains(&account_id)
         }
-
 
         /// return count
         #[ink(message)]
@@ -234,14 +228,17 @@ mod simple_counter_with_hashmap {
             let account_id2 = AccountId::from([0x02; 32]);
             let account_id3 = AccountId::from([0x03; 32]);
             let mut counter = Counter::new(0, account_id);
-            
+
             assert!(counter.set_first_auth(account_id) == Err(Error::NotFirstAuth));
             assert_eq!(counter.get_auth_count(), 1);
             assert_eq!(counter.remove_auth(account_id), Ok(()));
             assert_eq!(counter.get_auth_count(), 0);
             assert_eq!(counter.set_first_auth(account_id2), Ok(()));
             assert_eq!(counter.get_auth_count(), 1);
-            assert_eq!(counter.set_first_auth(account_id3), Err(Error::NotFirstAuth));
+            assert_eq!(
+                counter.set_first_auth(account_id3),
+                Err(Error::NotFirstAuth)
+            );
             assert_eq!(counter.get_auth_count(), 1);
 
             assert!(!counter.is_auth_account_id(account_id));
@@ -255,9 +252,9 @@ mod simple_counter_with_hashmap {
             let account_id2 = AccountId::from([0x02; 32]);
             let account_id3 = AccountId::from([0x03; 32]);
             let mut counter = Counter::new(0, account_id2);
-            
+
             assert!(!counter.is_auth());
-            counter.register_new_auth(account_id3); //panic; only auth can register new auth.
+            assert_eq!(counter.register_new_auth(account_id3), Ok(())); //panic; only auth can register new auth.
         }
 
         #[ink::test]
@@ -266,9 +263,15 @@ mod simple_counter_with_hashmap {
             let account_id2 = AccountId::from([0x02; 32]);
             let mut counter = Counter::new(0, account_id);
 
-            assert_eq!(counter.transfer_ownership(AccountId::from([0x00;32])), Err(Error::AccountIdIsNotValid));
+            assert_eq!(
+                counter.transfer_ownership(AccountId::from([0x00; 32])),
+                Err(Error::AccountIdIsNotValid)
+            );
             assert_eq!(counter.get_contract_onwer(), account_id);
-            assert_eq!(counter.transfer_ownership(account_id), Err(Error::AccountIdIsNotValid));
+            assert_eq!(
+                counter.transfer_ownership(account_id),
+                Err(Error::AccountIdIsNotValid)
+            );
             assert_eq!(counter.get_contract_onwer(), account_id);
             assert_eq!(counter.transfer_ownership(account_id2), Ok(()));
             assert_eq!(counter.get_contract_onwer(), account_id2); //change owner
@@ -285,7 +288,7 @@ mod simple_counter_with_hashmap {
             assert_eq!(counter.get_auth_count(), 0);
             assert_eq!(counter.transfer_ownership(account_id2), Ok(()));
             assert_eq!(counter.get_contract_onwer(), account_id2);
-            counter.set_first_auth(account_id2); //panic; only owner can set the first auth.
+            assert_eq!(counter.set_first_auth(account_id2), Ok(())); //panic; only owner can set the first auth.
         }
 
         #[ink::test]
@@ -302,7 +305,10 @@ mod simple_counter_with_hashmap {
             assert!(counter.is_auth_account_id(account_id3));
             assert_eq!(counter.get_auth_count(), 3);
 
-            assert_eq!(counter.register_new_auth(account_id3), Err(Error::AlreadyRegistered));
+            assert_eq!(
+                counter.register_new_auth(account_id3),
+                Err(Error::AlreadyRegistered)
+            );
             assert_eq!(counter.get_auth_count(), 3);
         }
 
@@ -372,7 +378,6 @@ mod simple_counter_with_hashmap {
             assert_eq!(counter.get_count(), 115);
             assert_eq!(counter.execute_tx(u64::MAX), Err(Error::TxValueIsNotValid));
             assert_eq!(counter.get_count(), 115);
-        }        
-
+        }
     }
 }
