@@ -1,0 +1,22 @@
+[package]
+name = "pdao-polkadot-examples"
+version = "0.1.0"
+authors = ["PDAO Team <hello@postech-dao.xyz>"]
+edition = "2021"
+publish = false
+
+license = "MIT"
+repository = "https://github.com/postech-dao/polkadot"
+readme = "../README.md"
+
+
+[dependencies]
+pallet-contracts-primitives = "6.0.0"
+subxt = "0.22.0"
+cargo-contract = "1.4.0"
+
+anyhow = "1.0.58"
+serde = { version = "1.0.138", default-features = false, features = ["derive"] }
+serde_json = "1.0.82"
+sp-core = "6.0.0"
+jsonrpsee = { version = "0.14.0", features = ["ws-client"] }
