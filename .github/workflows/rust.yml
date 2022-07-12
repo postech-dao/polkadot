@@ -42,7 +42,7 @@ jobs:
         with:
           toolchain: nightly
           command: clippy
-          args: --workspace --exclude rust_analyzer_wasm --exclude simple_counter_with_hashmap --all-targets --all-features -- -D warnings
+          args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
 
   test:
     runs-on: ubuntu-latest
