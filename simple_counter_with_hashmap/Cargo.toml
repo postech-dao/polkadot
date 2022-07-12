@@ -15,7 +15,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 [lib]
-name = "simple_counter_with_hashmap"
+name = "contract"
 path = "./src/lib.rs"
 crate-type = [
 	# Used for normal contract Wasm blobs.
