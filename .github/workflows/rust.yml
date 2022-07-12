@@ -26,7 +26,7 @@ jobs:
           args: --all -- --check
 
 clippy_check:
-    runs-on: ubuntu-latest
+    runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
@@ -38,7 +38,24 @@ clippy_check:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
+  # clippy:
+  #   runs-on: 'ubuntu-latest'
+  #   steps:
+  #     - name: Install Rust toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
+  #         components: clippy
 
+  #     - uses: actions/checkout@v3
+
+  #     - name: Cargo clippy
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         toolchain: nightly
+  #         command: clippy
+  #         args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
 
   test:
     runs-on: ubuntu-latest
