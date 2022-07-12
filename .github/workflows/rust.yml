@@ -40,7 +40,7 @@ jobs:
       - name: Cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           command: clippy
           args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
 
@@ -55,4 +55,12 @@ jobs:
       - name: Tag docker image
         run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
       - name: Run tests
-        run: cargo test --workspace --exclude rust_analyzer_wasm --verbose 
+        run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
+
+  
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build contract
+        run: cargo +nightly contract build --manifest-path ./simple_counter/Cargo.toml
