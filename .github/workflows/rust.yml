@@ -32,7 +32,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           components: clippy
 
       - uses: actions/checkout@v3
@@ -61,6 +61,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+
       - uses: actions/checkout@v3
       - name: Build contract
         run: cargo +nightly contract build --manifest-path ./simple_counter/Cargo.toml
