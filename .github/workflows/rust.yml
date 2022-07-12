@@ -69,5 +69,9 @@ jobs:
           components: rustfmt
 
       - uses: actions/checkout@v3
+
+      - name: Install Cargo contract
+        run: cargo install cargo-contract --force
+
       - name: Build contract
         run: cargo +nightly contract build --manifest-path ./simple_counter/Cargo.toml
