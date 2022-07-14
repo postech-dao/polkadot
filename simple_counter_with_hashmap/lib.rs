@@ -1,383 +1,269 @@
+
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(non_snake_case)]
 
 use ink_lang as ink;
 
 #[ink::contract]
-mod simple_counter_with_hashmap {
+mod counter {
 
-    /// To use hashmap(Mapping)
-    /// ink_storage::Mapping is more optimised than ink_prelude::collections::HashMap
-    use ink_storage::{traits::SpreadAllocate, Mapping};
+    use ink_prelude::vec::Vec;
 
-    /// Auth is a mapping(address => isMember)
+    use ink_storage::traits::SpreadAllocate;
+    
     #[ink(storage)]
     #[derive(SpreadAllocate)]
-    pub struct Counter {
-        owner: AccountId,
-        auth: Mapping<AccountId, bool>,
+    pub struct State {
         count: u64,
-        auth_count: u64,
+        auth: Vec<AccountId>, //We could use Mapping<,> of course.
+        init: bool,
     }
 
-    /// Emitted when tx ocurrs
-    #[ink(event)]
+    #[ink(event)] //Event emitted when transaction occurs
     pub struct Transaction {
         value: u64,
     }
 
-    /// Define Error type
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(::scale_info::TypeInfo))]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         AlreadyRegistered,
-        NotRegistered,
-        NotFirstAuth,
-        TxValueIsNotValid,
-        AccountIdIsNotValid,
+        AlreadyRemoved,
+        ValueIsOver10,
+        CallerNotAuth,
     }
 
-/// Define contract result type
     pub type Result<T> = core::result::Result<T, Error>;
 
-/// contract function
-    impl Counter {
+    impl State {
         #[ink(constructor)]
-        pub fn new(count: u64, first_auth: AccountId) -> Self {
-            ink_lang::utils::initialize_contract(|contract: &mut Self| {
-                contract.owner = contract.env().caller();
-                contract.count = count;
-                contract.auth.insert(first_auth, &true);
-                contract.auth_count = 1;
-            })
-        }
-
-/// Check whether a caller is the owner or not
-        fn _ensure_caller_is_owner(&self) {
-            let caller = self.env().caller();
-            assert!(caller == self.owner);
-            if caller != self.owner {
-                panic!("caller is not owner!")
+        pub fn new(_initCount: u64) -> Self {
+            Self {
+                count: _initCount,
+                auth: Vec::new(),
+                init: false,
             }
         }
 
-/// Check whether a caller is auth or not
-        fn _ensure_caller_is_auth(&self) {
-            let caller = self.env().caller();
-            assert!(self.auth.contains(caller));
-            if !self.auth.contains(caller) {
-                panic!("caller is not auth!")
-            }
-        }
-
-/// Only contract owner can set the first auth.
         #[ink(message)]
-        pub fn set_first_auth(&mut self, first_auth: AccountId) -> Result<()> {
-            self._ensure_caller_is_owner();
-
-            if self.auth_count != 0 {
-                return Err(Error::NotFirstAuth);
+        pub fn init(&mut self, _initCount: u64, _auth: AccountId) {
+            if self.init {
+                panic!("Already initalized");
             }
 
-            self.auth.insert(&first_auth, &true);
-            self.auth_count += 1;
-
-            Ok(())
+            self.count = _initCount;
+            self.auth.push(_auth);
+            self.init = true;
         }
 
-/// transfer owner to other account id
-        #[ink(message)]
-        pub fn transfer_ownership(&mut self, to: AccountId) -> Result<()> {
-            self._ensure_caller_is_owner();
+        #[ink(message)] //Check the caller is in auth
+        pub fn only_auth(&self) {
+            let from = Self::env().caller();
 
-            if to == AccountId::from([0x00; 32]) || to == self.owner {
-                return Err(Error::AccountIdIsNotValid);
+            if !self.init {
+                panic!("Not initalized yet");
             }
 
-            self.owner = to;
-            Ok(())
+            if !self.auth.contains(&from) {
+                panic!("Caller is not authorized");
+            }
         }
 
-/// Auth can register new auth.
-        #[ink(message)]
-        pub fn register_new_auth(&mut self, new_auth: AccountId) -> Result<()> {
-            self._ensure_caller_is_auth();
+        #[ink(message)] //Execute our transaction
+        pub fn execute(&mut self, input: u64) -> Result<u64> {
+            self.only_auth();
+
+            if input > 10 {
+                return Err(Error::ValueIsOver10);
+            }
+
+            self.count += input;
+
+            Self::env().emit_event(Transaction { value: input });
+
+            Ok(input)
+        }
+
+        #[ink(message)] //Add auth
+        pub fn add_auth(&mut self, new_auth: AccountId) -> Result<()> {
+            self.only_auth();
 
             if self.auth.contains(&new_auth) {
                 return Err(Error::AlreadyRegistered);
             }
 
-            self.auth.insert(&new_auth, &true);
-            self.auth_count += 1;
+            self.auth.push(new_auth);
 
             Ok(())
         }
 
-/// Only auth can remove auth
-        #[ink(message)]
-        pub fn remove_auth(&mut self, auth: AccountId) -> Result<()> {
-            self._ensure_caller_is_auth();
+        #[ink(message)] //Remove auth from Vec<AccountId>
+        pub fn remove_auth(&mut self, _auth: AccountId) -> Result<()> {
+            self.only_auth();
 
-            if !self.auth.contains(&auth) {
-                return Err(Error::NotRegistered);
+            if self.auth.len() == 1 {
+                panic!("Auth will be empty");
             }
 
-            self.auth.remove(&auth);
-            self.auth_count -= 1;
+            if !self.auth.contains(&_auth) {
+                return Err(Error::AlreadyRemoved);
+            }
+
+            self.auth.retain(|&x| x != _auth);
 
             Ok(())
         }
 
-/// execute a transaction
-        #[ink(message)]
-        pub fn execute_tx(&mut self, value: u64) -> Result<u64> {
-            self._ensure_caller_is_auth();
-
-            if value > 10 {
-                return Err(Error::TxValueIsNotValid);
-            }
-            self.count += value;
-            self.env().emit_event(Transaction { value });
-
-            Ok(value)
-        }
-
-/// increment
         #[ink(message)]
         pub fn increment(&mut self) {
-            self._ensure_caller_is_auth();
+            self.only_auth();
             self.count += 1;
         }
 
-/// decrement
         #[ink(message)]
         pub fn decrement(&mut self) {
-            self._ensure_caller_is_auth();
+            self.only_auth();
             self.count -= 1;
         }
 
-/// reset
         #[ink(message)]
         pub fn reset(&mut self) {
-            self._ensure_caller_is_auth();
+            self.only_auth();
             self.count = 0;
         }
 
-/// return contract owner
-        #[ink(message)]
-        pub fn get_contract_onwer(&self) -> AccountId {
-            self.owner
-        }
-
-/// return auth count
-        #[ink(message)]
-        pub fn get_auth_count(&self) -> u64 {
-            self.auth_count
-        }
-
-/// return whether caller is auth(true) or not(false)
-        #[ink(message)]
-        pub fn is_auth(&self) -> bool {
-            self.auth.contains(self.env().caller())
-        }
-
-/// return whether the account id is auth(true) or not(false)
-        #[ink(message)]
-        pub fn is_auth_account_id(&self, account_id: AccountId) -> bool {
-            self.auth.contains(&account_id)
-        }
-
-/// return count
-        #[ink(message)]
+        #[ink(message)] //Since below 2 functions are "view" function, we don't need to check whether caller is in auth or not.
         pub fn get_count(&self) -> u64 {
             self.count
         }
+
+        #[ink(message)]
+        pub fn get_auth(&self) -> Vec<AccountId> {
+            self.auth.clone()
+        }
     }
 
-    // Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    // module and test functions are marked with a `#[test]` attribute.
-    // The below code is technically just normal Rust code.
+    //Below test cases are based on above functions.
+    //We can check that our functions work well.
+
     #[cfg(test)]
     mod tests {
-/// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
+        use crate::counter::Error::*;
 
-/// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-/// We test a simple use case of our contract.
+        #[ink::test]
+        fn new_works() {
+            let state = State::new(0);
+
+            assert_eq!(state.count, 0); //count should be 0
+            assert_eq!(state.auth.len(), 0); //We don't push any auth yet
+        }
+
+        //Do init
         #[ink::test]
         fn init_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let counter = Counter::new(u64::MAX, account_id2);
+            let mut state = State::new(0);
 
-            assert_eq!(counter.get_count(), u64::MAX);
-            assert_eq!(counter.get_auth_count(), 1);
+            state.init(5, AccountId::from([0x01; 32]));
 
-            assert_eq!(counter.get_contract_onwer(), account_id);
-            assert!(counter.get_contract_onwer() != account_id2);
-
-            assert!(!counter.is_auth_account_id(account_id));
-            assert!(counter.is_auth_account_id(account_id2));
+            assert_eq!(state.auth[0], AccountId::from([0x01; 32]));
         }
 
-///set first auth when there is no auth.
-        #[ink::test]
-        fn set_first_auth_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let account_id3 = AccountId::from([0x03; 32]);
-            let mut counter = Counter::new(0, account_id);
-
-            assert!(counter.set_first_auth(account_id) == Err(Error::NotFirstAuth));
-            assert_eq!(counter.get_auth_count(), 1);
-            assert_eq!(counter.remove_auth(account_id), Ok(()));
-            assert_eq!(counter.get_auth_count(), 0);
-            assert_eq!(counter.set_first_auth(account_id2), Ok(()));
-            assert_eq!(counter.get_auth_count(), 1);
-            assert_eq!(
-                counter.set_first_auth(account_id3),
-                Err(Error::NotFirstAuth)
-            );
-            assert_eq!(counter.get_auth_count(), 1);
-
-            assert!(!counter.is_auth_account_id(account_id));
-            assert!(counter.is_auth_account_id(account_id2));
-        }
-
+        //Below case should panic
         #[ink::test]
         #[should_panic]
-        fn only_auth_works() {
-            // let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let account_id3 = AccountId::from([0x03; 32]);
-            let mut counter = Counter::new(0, account_id2);
+        fn prevent_re_init_works() {
+            let mut state = State::new(0);
 
-            assert!(!counter.is_auth());
-            assert_eq!(counter.register_new_auth(account_id3), Ok(())); //panic; only auth can register new auth.
+            state.init(5, AccountId::from([0x01; 32]));
+
+            state.init(3, AccountId::from([0x01; 32])); //panic occurs
+        }
+
+        //Get count
+        #[ink::test]
+        fn get_count_works() {
+            let state = State::new(0);
+
+            assert_eq!(state.get_count(), 0);
+        }
+
+        //Get Auth
+        #[ink::test]
+        fn get_auth_works() {
+            let mut state = State::new(0);
+
+            state.init(5, AccountId::from([0x01; 32]));
+
+            assert_eq!(state.auth[0], AccountId::from([0x01; 32]));
         }
 
         #[ink::test]
-        fn transfer_ownership_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let mut counter = Counter::new(0, account_id);
+        fn add_auth_works() {
+            let mut state = State::new(0);
 
-            assert_eq!(
-                counter.transfer_ownership(AccountId::from([0x00; 32])),
-                Err(Error::AccountIdIsNotValid)
-            );
-            assert_eq!(counter.get_contract_onwer(), account_id);
-            assert_eq!(
-                counter.transfer_ownership(account_id),
-                Err(Error::AccountIdIsNotValid)
-            );
-            assert_eq!(counter.get_contract_onwer(), account_id);
-            assert_eq!(counter.transfer_ownership(account_id2), Ok(()));
-            assert_eq!(counter.get_contract_onwer(), account_id2); //change owner
-        }
+            let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-        #[ink::test]
-        #[should_panic]
-        fn only_owner_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let mut counter = Counter::new(0, account_id);
+            state.init(5, accounts.alice);
 
-            assert_eq!(counter.remove_auth(account_id), Ok(()));
-            assert_eq!(counter.get_auth_count(), 0);
-            assert_eq!(counter.transfer_ownership(account_id2), Ok(()));
-            assert_eq!(counter.get_contract_onwer(), account_id2);
-            assert_eq!(counter.set_first_auth(account_id2), Ok(())); //panic; only owner can set the first auth.
-        }
+            let result = state.add_auth(AccountId::from([0x02; 32]));
 
-        #[ink::test]
-        fn register_auth_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let account_id3 = AccountId::from([0x03; 32]);
-            let mut counter = Counter::new(0, account_id);
-
-            assert_eq!(counter.register_new_auth(account_id2), Ok(()));
-            assert_eq!(counter.register_new_auth(account_id3), Ok(()));
-            assert!(counter.is_auth_account_id(account_id));
-            assert!(counter.is_auth_account_id(account_id2));
-            assert!(counter.is_auth_account_id(account_id3));
-            assert_eq!(counter.get_auth_count(), 3);
-
-            assert_eq!(
-                counter.register_new_auth(account_id3),
-                Err(Error::AlreadyRegistered)
-            );
-            assert_eq!(counter.get_auth_count(), 3);
+            assert_eq!(result, Ok(()));
         }
 
         #[ink::test]
         fn remove_auth_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let account_id2 = AccountId::from([0x02; 32]);
-            let account_id3 = AccountId::from([0x03; 32]);
-            let mut counter = Counter::new(0, account_id);
+            let mut state = State::new(0);
 
-            assert_eq!(counter.register_new_auth(account_id2), Ok(()));
-            assert_eq!(counter.remove_auth(account_id3), Err(Error::NotRegistered));
-            assert_eq!(counter.get_auth_count(), 2);
-            assert_eq!(counter.register_new_auth(account_id3), Ok(()));
-            assert_eq!(counter.get_auth_count(), 3);
-            assert_eq!(counter.remove_auth(account_id3), Ok(()));
-            assert_eq!(counter.get_auth_count(), 2);
+            let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
+
+            state.init(5, accounts.alice);
+
+            let _result = state.add_auth(AccountId::from([0x02; 32]));
+
+            let result2 = state.remove_auth(AccountId::from([0x02; 32]));
+
+            assert_eq!(result2, Ok(()));
         }
 
+        //Testing increment, decrement, reset in one test
         #[ink::test]
-        #[should_panic]
-        fn underflow() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let mut counter = Counter::new(0, account_id);
-            counter.decrement(); //panic
+        fn count_control_works() {
+            let mut state = State::new(0);
+
+            let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
+
+            state.init(5, accounts.alice);
+
+            state.increment();
+            assert_eq!(state.count, 6);
+
+            state.decrement();
+            assert_eq!(state.count, 5);
+
+            state.increment();
+            assert_eq!(state.count, 6);
+
+            state.reset();
+            assert_eq!(state.count, 0);
         }
 
+        //Testing transaction
         #[ink::test]
-        #[should_panic]
-        fn overflow() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let mut counter = Counter::new(u64::MAX, account_id);
-            counter.increment(); //panic
-        }
+        fn execute_works() {
+            let mut state = State::new(0);
 
-        #[ink::test]
-        fn reset_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let mut counter = Counter::new(0, account_id);
+            let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-            counter.increment();
-            counter.increment();
-            counter.increment();
-            counter.increment();
-            counter.increment();
-            assert_eq!(counter.get_count(), 5);
-            counter.decrement();
-            counter.decrement();
-            counter.decrement();
-            assert_eq!(counter.get_count(), 2);
-            counter.reset();
-            assert_eq!(counter.get_count(), 0);
-        }
+            state.init(5, accounts.alice);
 
-        #[ink::test]
-        fn tx_works() {
-            let account_id = AccountId::from([0x01; 32]); //default owner
-            let mut counter = Counter::new(100, account_id);
+            let result = state.execute(8).unwrap();
+            assert_eq!(result, 8);
 
-            assert_eq!(counter.execute_tx(0), Ok(0));
-            assert_eq!(counter.get_count(), 100);
-            assert_eq!(counter.execute_tx(5), Ok(5));
-            assert_eq!(counter.get_count(), 105);
-            assert_eq!(counter.execute_tx(10), Ok(10));
-            assert_eq!(counter.get_count(), 115);
-            assert_eq!(counter.execute_tx(11), Err(Error::TxValueIsNotValid));
-            assert_eq!(counter.get_count(), 115);
-            assert_eq!(counter.execute_tx(u64::MAX), Err(Error::TxValueIsNotValid));
-            assert_eq!(counter.get_count(), 115);
+            let result2 = state.execute(15);
+            assert_eq!(result2, Err(ValueIsOver10));
         }
     }
 }
