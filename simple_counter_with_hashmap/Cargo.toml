@@ -5,6 +5,7 @@ authors = ["[your_name] <[your_email]>"]
 edition = "2021"
 
 [dependencies]
+ink_prelude = { version = "3", default-features = false }
 ink_primitives = { version = "3", default-features = false }
 ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
 ink_env = { version = "3", default-features = false }
@@ -25,6 +26,7 @@ crate-type = [
 [features]
 default = ["std"]
 std = [
+    "ink_prelude/std",
     "ink_metadata/std",
     "ink_env/std",
     "ink_storage/std",
@@ -33,3 +35,4 @@ std = [
     "scale-info/std",
 ]
 ink-as-dependency = []
+

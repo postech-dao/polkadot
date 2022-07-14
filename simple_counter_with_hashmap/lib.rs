@@ -1,4 +1,3 @@
-
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
@@ -10,7 +9,7 @@ mod counter {
     use ink_prelude::vec::Vec;
 
     use ink_storage::traits::SpreadAllocate;
-    
+
     #[ink(storage)]
     #[derive(SpreadAllocate)]
     pub struct State {
