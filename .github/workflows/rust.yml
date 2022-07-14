@@ -46,7 +46,7 @@ jobs:
         with:
           toolchain: nightly
           command: clippy
-          args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features
+          args: --workspace --exclude rust_analyzer_wasm --exclude contracts --all-targets --all-features
 
   build:
     runs-on: ubuntu-latest
