@@ -159,6 +159,5 @@ mod counter {
             assert_eq!(state.count, 0); //count should be 0
             assert_eq!(state.auth.len(), 0); //We don't push any auth yet
         }
-
     }
 }
