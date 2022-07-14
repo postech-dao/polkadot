@@ -38,7 +38,7 @@ Build `simple_counter` with the cargo command and then upload and instantiate `.
 cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
 ```
 
-### Test contract
+### Test a specific contract
 To test a contract, execute `cargo +nightly contract test` with `--manifest-path` with the path of `Cargo.toml`.
 <br/>
 e.g. Test `simple_counter` with this command.

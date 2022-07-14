@@ -46,7 +46,7 @@ jobs:
         with:
           toolchain: nightly
           command: clippy
-          args: --workspace --exclude rust_analyzer_wasm --exclude contracts --all-targets --all-features
+          args: --workspace --exclude rust_analyzer_wasm --exclude contracts --all-targets --all-features -- -D warnings
 
   build:
     runs-on: ubuntu-latest
@@ -60,3 +60,5 @@ jobs:
         run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
       - name: Run tests
         run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
+      - name: build simple_counter
+        run: cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
