@@ -70,13 +70,9 @@ jobs:
           profile: minimal
           toolchain: nightly
       - uses: actions/checkout@v3
-      - name: check dir
-        run: ls
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:latest
-      - name: check dir
-        run: ls
       - name: Build simple_counter
-        run: cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
+        run: cargoenvhere paritytech/contracts-ci-linux:latest /bin/bash -c +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
       - name: Build simple_counter_with_hashmap
         run: cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
