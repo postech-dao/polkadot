@@ -60,12 +60,18 @@ jobs:
         run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
       - name: Run tests
         run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
+
+  build contracts:
+    runs-on: ubuntu-latest
+    steps:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
-      - name: build simple_counter
+      - name: Pull docker image
+        run: docker pull paritytech/contracts-ci-linux:production
+      - name: Build simple_counter
         run: cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
-      - name: build simple_counter_with_hashmap
+      - name: Build simple_counter_with_hashmap
         run: cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
