@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main", "develop-grt"]
   pull_request:
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -35,7 +36,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           components: clippy
 
       - uses: actions/checkout@v3
@@ -43,7 +44,7 @@ jobs:
       - name: Cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           command: clippy
           args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
 
