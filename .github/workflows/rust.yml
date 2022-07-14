@@ -1,9 +1,13 @@
 name: Rust
+
 on:
   push:
-    branches: ["main", "develop-grt"]
+    branches:
+      - main
   pull_request:
-    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   rustfmt:
@@ -44,7 +48,7 @@ jobs:
           command: clippy
           args: --workspace --exclude rust_analyzer_wasm --exclude contract --all-targets --all-features -- -D warnings
 
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -56,22 +60,3 @@ jobs:
         run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
       - name: Run tests
         run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
-
-  
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          components: rustfmt
-
-      - uses: actions/checkout@v3
-
-      - name: Install Cargo contract
-        run: cargo install cargo-contract --force
-
-      - name: Build contract
-        run: cargo +nightly contract build --manifest-path ./simple_counter/Cargo.toml
