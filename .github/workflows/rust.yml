@@ -72,6 +72,19 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install podman
         run: sudo apt-get -y install podman
+      - name: Cargoenvhere
+        run: function cargoenvhere {
+  dirname="$(basename $(pwd))"
+  user=$(whoami)
+  echo "Cargo as a virtual environment in" "$dirname" "dir"
+  mkdir -p /home/"$user"/cache/"$dirname"
+  podman run --rm -it -w /shellhere/"$dirname" \
+                      -v "$(pwd)":/shellhere/"$dirname" \
+                      -v /home/"$user"/cache/"$dirname"/:/cache/ \
+                      -e CARGO_HOME=/cache/cargo/ \
+                      -e SCCACHE_DIR=/cache/sccache/ \
+                      -e CARGO_TARGET_DIR=/cache/target/ "$@"
+}
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:production
       - name: Build simple_counter
