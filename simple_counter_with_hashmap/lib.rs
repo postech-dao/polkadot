@@ -36,10 +36,10 @@ mod simple_counter_with_hashmap {
         AccountIdIsNotValid,
     }
 
-    /// Define contract result type
+/// Define contract result type
     pub type Result<T> = core::result::Result<T, Error>;
 
-    /// contract function
+/// contract function
     impl Counter {
         #[ink(constructor)]
         pub fn new(count: u64, first_auth: AccountId) -> Self {
@@ -51,7 +51,7 @@ mod simple_counter_with_hashmap {
             })
         }
 
-        /// Check whether a caller is the owner or not
+/// Check whether a caller is the owner or not
         fn _ensure_caller_is_owner(&self) {
             let caller = self.env().caller();
             assert!(caller == self.owner);
@@ -60,7 +60,7 @@ mod simple_counter_with_hashmap {
             }
         }
 
-        /// Check whether a caller is auth or not
+/// Check whether a caller is auth or not
         fn _ensure_caller_is_auth(&self) {
             let caller = self.env().caller();
             assert!(self.auth.contains(caller));
@@ -69,7 +69,7 @@ mod simple_counter_with_hashmap {
             }
         }
 
-        /// Only contract owner can set the first auth.
+/// Only contract owner can set the first auth.
         #[ink(message)]
         pub fn set_first_auth(&mut self, first_auth: AccountId) -> Result<()> {
             self._ensure_caller_is_owner();
@@ -84,7 +84,7 @@ mod simple_counter_with_hashmap {
             Ok(())
         }
 
-        /// transfer owner to other account id
+/// transfer owner to other account id
         #[ink(message)]
         pub fn transfer_ownership(&mut self, to: AccountId) -> Result<()> {
             self._ensure_caller_is_owner();
@@ -97,7 +97,7 @@ mod simple_counter_with_hashmap {
             Ok(())
         }
 
-        /// Auth can register new auth.
+/// Auth can register new auth.
         #[ink(message)]
         pub fn register_new_auth(&mut self, new_auth: AccountId) -> Result<()> {
             self._ensure_caller_is_auth();
@@ -112,7 +112,7 @@ mod simple_counter_with_hashmap {
             Ok(())
         }
 
-        /// Only auth can remove auth
+/// Only auth can remove auth
         #[ink(message)]
         pub fn remove_auth(&mut self, auth: AccountId) -> Result<()> {
             self._ensure_caller_is_auth();
@@ -127,7 +127,7 @@ mod simple_counter_with_hashmap {
             Ok(())
         }
 
-        /// execute a transaction
+/// execute a transaction
         #[ink(message)]
         pub fn execute_tx(&mut self, value: u64) -> Result<u64> {
             self._ensure_caller_is_auth();
@@ -141,52 +141,52 @@ mod simple_counter_with_hashmap {
             Ok(value)
         }
 
-        /// increment
+/// increment
         #[ink(message)]
         pub fn increment(&mut self) {
             self._ensure_caller_is_auth();
             self.count += 1;
         }
 
-        /// decrement
+/// decrement
         #[ink(message)]
         pub fn decrement(&mut self) {
             self._ensure_caller_is_auth();
             self.count -= 1;
         }
 
-        /// reset
+/// reset
         #[ink(message)]
         pub fn reset(&mut self) {
             self._ensure_caller_is_auth();
             self.count = 0;
         }
 
-        /// return contract owner
+/// return contract owner
         #[ink(message)]
         pub fn get_contract_onwer(&self) -> AccountId {
             self.owner
         }
 
-        /// return auth count
+/// return auth count
         #[ink(message)]
         pub fn get_auth_count(&self) -> u64 {
             self.auth_count
         }
 
-        /// return whether caller is auth(true) or not(false)
+/// return whether caller is auth(true) or not(false)
         #[ink(message)]
         pub fn is_auth(&self) -> bool {
             self.auth.contains(self.env().caller())
         }
 
-        /// return whether the account id is auth(true) or not(false)
+/// return whether the account id is auth(true) or not(false)
         #[ink(message)]
         pub fn is_auth_account_id(&self, account_id: AccountId) -> bool {
             self.auth.contains(&account_id)
         }
 
-        /// return count
+/// return count
         #[ink(message)]
         pub fn get_count(&self) -> u64 {
             self.count
@@ -198,13 +198,13 @@ mod simple_counter_with_hashmap {
     // The below code is technically just normal Rust code.
     #[cfg(test)]
     mod tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
+/// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
 
-        /// Imports `ink_lang` so we can use `#[ink::test]`.
+/// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        /// We test a simple use case of our contract.
+/// We test a simple use case of our contract.
         #[ink::test]
         fn init_works() {
             let account_id = AccountId::from([0x01; 32]); //default owner
@@ -221,7 +221,7 @@ mod simple_counter_with_hashmap {
             assert!(counter.is_auth_account_id(account_id2));
         }
 
-        ///set first auth when there is no auth.
+///set first auth when there is no auth.
         #[ink::test]
         fn set_first_auth_works() {
             let account_id = AccountId::from([0x01; 32]); //default owner
