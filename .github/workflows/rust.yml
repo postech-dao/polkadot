@@ -61,7 +61,7 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
 
-  build contracts:
+  build_contracts:
     runs-on: ubuntu-latest
     steps:
       - name: Install Rust toolchain
