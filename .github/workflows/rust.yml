@@ -71,7 +71,10 @@ jobs:
           toolchain: nightly
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:production
+
+      - uses: actions/checkout@v3
+      
       - name: Build simple_counter
-        run: docker run --rm -t -v $(pwd):/sources paritytech/contracts-ci-linux:production cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
+        run: docker run --rm -i -v $(pwd):/sources paritytech/contracts-ci-linux:production cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
       - name: Build simple_counter_with_hashmap
         run: cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
