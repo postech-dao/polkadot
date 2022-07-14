@@ -73,10 +73,14 @@ jobs:
       - name: Install podman
         run: sudo apt-get -y install podman
       - name: Run shell scipt cargoenvhere
-        run: source ./snippets/test.sh
+        run: source ./snippets/.bashrc
+        shell: bash
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:production
+        shell: bash
       - name: Build simple_counter
         run: cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
+        shell: bash
       - name: Build simple_counter_with_hashmap
         run: cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
+        shell: bash
