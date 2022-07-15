@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "simple-counter",
-    "interact"
+    "contracts/simple_counter",
+    "contracts/simple_counter_with_hashmap"
 ]

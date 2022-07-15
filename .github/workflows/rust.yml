@@ -2,52 +2,85 @@ name: Rust
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "develop-grt"]
   pull_request:
     branches: ["main"]
 
-jobs:
-  lints:
-    name: rustfmt & clippy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+env:
+  CARGO_TERM_COLOR: always
 
-      - name: Install stable toolchain
+jobs:
+  rustfmt:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+          toolchain: nightly
+          components: rustfmt
 
-      - name: Run cargo fmt
+      - uses: actions/checkout@v3
+
+      - name: Cargo fmt
         uses: actions-rs/cargo@v1
         with:
+          toolchain: nightly
           command: fmt
           args: --all -- --check
 
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-  test:
-    name: cargo test
-    runs-on: ubuntu-latest
+  clippy:
+    runs-on: 'ubuntu-latest'
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
-          override: true
+          toolchain: nightly
+          components: clippy
 
-      - name: Run cargo test
+      - uses: actions/checkout@v3
+
+      - name: Cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          toolchain: nightly
+          command: clippy
+          args: --workspace --exclude rust_analyzer_wasm --exclude contracts --all-targets --all-features
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose
+      - name: Pull docker image
+        run: docker pull docker.io/achimcc/ink-backend:latest
+      - name: Tag docker image
+        run: docker tag docker.io/achimcc/ink-backend:latest ink-backend
+      - name: Run tests
+        run: cargo test --workspace --exclude rust_analyzer_wasm --verbose
+
+  build_contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+      - uses: actions/checkout@v3
+      - name: Install podman
+        run: sudo apt-get -y install podman
+      - name: Pull docker image
+        run: docker pull paritytech/contracts-ci-linux:production
+      - name: Build simple_counter
+        run: | 
+            source ./snippets/.bashrc
+            cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
+        shell: bash
+      - name: Build simple_counter_with_hashmap
+        run: |
+            source ./snippets/.bashrc
+            cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
+        shell: bash
