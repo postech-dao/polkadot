@@ -75,6 +75,9 @@ jobs:
       - name: Run shell scipt cargoenvhere
         run: chmod +x ./snippets/test2.sh
         shell: bash
+      - name: sh test
+        run: t1t1t1
+        shell: bash
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:production
         shell: bash
