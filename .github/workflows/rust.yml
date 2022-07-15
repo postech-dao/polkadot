@@ -77,14 +77,22 @@ jobs:
       - name: Run shell scipt cargoenvhere
         run: source ./snippets/.bashrc
         shell: bash
-      - name: sh test
-        run: t1t1t1
-        shell: bash
       - name: Pull docker image
         run: docker pull paritytech/contracts-ci-linux:production
         shell: bash
       - name: Build simple_counter
-        run: cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
+        run: | 
+        dirname="$(basename $(pwd))"
+        user=$(whoami)
+        echo "Cargo as a virtual environment in" "$dirname" "dir"
+        mkdir -p /home/"$user"/cache/"$dirname"
+        podman run --rm -it -w /shellhere/"$dirname" \
+                      -v "$(pwd)":/shellhere/"$dirname" \
+                      -v /home/"$user"/cache/"$dirname"/:/cache/ \
+                      -e CARGO_HOME=/cache/cargo/ \
+                      -e SCCACHE_DIR=/cache/sccache/ \
+                      -e CARGO_TARGET_DIR=/cache/target/ "$@"
+        paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter/Cargo.toml
         shell: bash
       - name: Build simple_counter_with_hashmap
         run: cargoenvhere paritytech/contracts-ci-linux:production /bin/bash -c cargo +nightly contract build --manifest-path ./contracts/simple_counter_with_hashmap/Cargo.toml
