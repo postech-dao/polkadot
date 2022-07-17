@@ -50,3 +50,4 @@ async fn upload_modify_and_query() {
     // upload the contract, submit a transaction that modifies its state, and query the state
     unimplemented!();
 }
+
