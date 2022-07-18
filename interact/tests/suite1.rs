@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use ws::{connect, CloseCode};
 
 use sp_keyring::AccountKeyring;
 use subxt::{
