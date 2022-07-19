@@ -23,6 +23,7 @@ impl Config {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_connection() {
     let _config = Config::read_from_env();
     // check whether the full node is responding by a simple request
@@ -30,6 +31,7 @@ async fn check_connection() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_block_number() {
     let _config = Config::read_from_env();
     // check the latest block number recognized by the full node **twice** with some delay,
@@ -38,6 +40,7 @@ async fn check_block_number() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_account() {
     let _config = Config::read_from_env();
     // by requesting the full node, check whether the account given by the config has enough native token to pay gas fee
@@ -45,9 +48,9 @@ async fn check_account() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn upload_modify_and_query() {
     let _config = Config::read_from_env();
     // upload the contract, submit a transaction that modifies its state, and query the state
     unimplemented!();
 }
-
