@@ -33,6 +33,7 @@ impl Config {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_connection() {
     tracing_subscriber::fmt::init();
 
@@ -47,6 +48,7 @@ async fn check_connection() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_block_number() {
     tracing_subscriber::fmt::init();
 
@@ -81,6 +83,7 @@ async fn check_block_number() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn check_account() {
     tracing_subscriber::fmt::init();
 
