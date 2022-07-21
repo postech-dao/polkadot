@@ -1,6 +1,7 @@
 {
-    "full_node_url": "https://example.com",
-    "account_public": "example.testnet.public",
-    "account_private": "example.testnet.private",
-    "wasm_binary_path": "example/path"
+    "test_local_node_url": "ws://127.0.0.1:9944",
+    "test_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
+    "account_public": "example.public",
+    "account_password": "example.password",
+    "account_seed": "example.seed"
 }

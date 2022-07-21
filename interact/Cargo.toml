@@ -10,14 +10,10 @@ repository = "https://github.com/postech-dao/polkadot"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-tokio-postgres = "0.7.6"
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
 reqwest = "0.11"
 serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
-<<<<<<< HEAD
 ws = "0.9.2"
 
 [dev-dependencies]
@@ -29,11 +25,4 @@ futures = "0.3.13"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
 hex = "0.4.3"
 tracing-subscriber = "0.3.11"
-
-[env]
-full_node_url = ""
-account_public = ""
-account_private = ""
-wasm_binary_path = ""
-=======
->>>>>>> b8b535c0eda07959d8b60baf3ccebebd60008c7e
+sp-core = "6.0.0"
