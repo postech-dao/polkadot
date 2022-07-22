@@ -25,6 +25,10 @@ mod counter {
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
+        AlreadyInitialized,
+        NotInitialized,
+        WillBeZeroAuth,
+        NotAuthorized,
         AlreadyRegistered,
         AlreadyRemoved,
         ValueIsOver10,
@@ -46,34 +50,39 @@ mod counter {
 
         /// Initialize the contract.
         #[ink(message)]
-        pub fn init(&mut self, init_count: u64, _auth: AccountId) {
+        pub fn init(&mut self, init_count: u64, _auth: AccountId) -> Result<()> {
             if self.init {
-                panic!("Already initalized");
+                return Err(Error::AlreadyInitialized);
             }
 
             self.count = init_count;
             self.auth.push(_auth);
             self.init = true;
+
+            Ok(())
         }
 
         /// Checks the caller is in auth
         #[ink(message)]
-        pub fn only_auth(&self) {
+        pub fn only_auth(&self) -> Result<()> {
             let from = Self::env().caller();
 
             if !self.init {
-                panic!("Not initalized yet");
+                return Err(Error::NotInitialized);
             }
 
             if !self.auth.contains(&from) {
-                panic!("Caller is not authorized");
+                return Err(Error::NotAuthorized);
             }
+
+            Ok(())
         }
 
         /// Executes tx
         #[ink(message)]
         pub fn execute(&mut self, input: u64) -> Result<u64> {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
 
             if input > 10 {
                 return Err(Error::ValueIsOver10);
@@ -89,7 +98,8 @@ mod counter {
         /// Registers an auth
         #[ink(message)]
         pub fn add_auth(&mut self, new_auth: AccountId) -> Result<()> {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
 
             if self.auth.contains(&new_auth) {
                 return Err(Error::AlreadyRegistered);
@@ -103,10 +113,11 @@ mod counter {
         /// Removes an auth from Vec<AccountId>
         #[ink(message)]
         pub fn remove_auth(&mut self, _auth: AccountId) -> Result<()> {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
 
             if self.auth.len() == 1 {
-                panic!("Auth will be empty");
+                return Err(Error::WillBeZeroAuth);
             }
 
             if !self.auth.contains(&_auth) {
@@ -121,21 +132,24 @@ mod counter {
         /// Increases the count by one.
         #[ink(message)]
         pub fn increment(&mut self) {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
             self.count += 1;
         }
 
         /// Decreases the count by one.
         #[ink(message)]
         pub fn decrement(&mut self) {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
             self.count -= 1;
         }
 
         /// Resets the count.
         #[ink(message)]
         pub fn reset(&mut self) {
-            self.only_auth();
+            self.only_auth()
+                .expect("contract is not initialized or caller is not in auth");
             self.count = 0;
         }
 
@@ -177,7 +191,6 @@ mod counter {
         }
 
         #[ink::test]
-        #[should_panic]
         fn prevent_re_init_works() {
             let mut state = State::new(0);
 
