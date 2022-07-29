@@ -185,7 +185,7 @@ mod counter {
         fn init_works() {
             let mut state = State::new(0);
 
-            state.init(5, AccountId::from([0x01; 32]));
+            state.init(5, AccountId::from([0x01; 32])).unwrap();
 
             assert_eq!(state.auth[0], AccountId::from([0x01; 32]));
         }
@@ -194,9 +194,9 @@ mod counter {
         fn prevent_re_init_works() {
             let mut state = State::new(0);
 
-            state.init(5, AccountId::from([0x01; 32]));
+            state.init(5, AccountId::from([0x01; 32])).unwrap();
 
-            state.init(3, AccountId::from([0x01; 32])); //panic occurs
+            state.init(3, AccountId::from([0x01; 32])).unwrap(); //panic occurs
         }
 
         #[ink::test]
@@ -210,7 +210,7 @@ mod counter {
         fn get_auth_works() {
             let mut state = State::new(0);
 
-            state.init(5, AccountId::from([0x01; 32]));
+            state.init(5, AccountId::from([0x01; 32])).unwrap();
 
             assert_eq!(state.auth[0], AccountId::from([0x01; 32]));
         }
@@ -221,7 +221,7 @@ mod counter {
 
             let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-            state.init(5, accounts.alice);
+            state.init(5, accounts.alice).unwrap();
 
             let result = state.add_auth(AccountId::from([0x02; 32]));
 
@@ -234,7 +234,7 @@ mod counter {
 
             let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-            state.init(5, accounts.alice);
+            state.init(5, accounts.alice).unwrap();
 
             let _result = state.add_auth(AccountId::from([0x02; 32]));
 
@@ -250,7 +250,7 @@ mod counter {
 
             let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-            state.init(5, accounts.alice);
+            state.init(5, accounts.alice).unwrap();
 
             state.increment();
             assert_eq!(state.count, 6);
@@ -272,7 +272,7 @@ mod counter {
 
             let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
 
-            state.init(5, accounts.alice);
+            state.init(5, accounts.alice).unwrap();
 
             let result = state.execute(8).unwrap();
             assert_eq!(result, 8);
