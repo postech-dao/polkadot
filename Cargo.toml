@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "simple_counter",
-    "interact"
+    "interact",
+    "colony-chain",
 ]
