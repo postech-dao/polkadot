@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use pdao_colony_common::*;
-use pdao_contract_common::*;
+use pdao_colony_contract_common::*;
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
