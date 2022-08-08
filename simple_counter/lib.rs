@@ -191,6 +191,7 @@ mod counter {
         }
 
         #[ink::test]
+        #[should_panic]
         fn prevent_re_init_works() {
             let mut state = State::new(0);
 
