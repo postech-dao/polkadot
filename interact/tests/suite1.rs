@@ -1,26 +1,20 @@
-use std::str::FromStr;
-
+use pdao_polkadot_interact::*;
 use serde::{Deserialize, Serialize};
-
-use sp_core::crypto;
-use sp_keyring::AccountKeyring;
-use subxt::{
-    rpc::Subscription,
-    sp_runtime::{generic::Header, traits::BlakeTwo256},
-    ClientBuilder, DefaultConfig, PairSigner, PolkadotExtrinsicParams,
-};
-
-#[subxt::subxt(runtime_metadata_path = "../artifacts/polkadot_metadata.scale")]
-pub mod polkadot {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    /// Local node url for substrate-contract-node.
     test_local_node_url: String,
-    test_node_url: String,
+    /// Rococo testnet url.
+    test_rococo_node_url: String,
+    /// Shibuya testnet url.
+    test_shibuya_node_url: String,
+    /// Deployed contract address on shibuya or shiden.
+    contract_address: String,
+    /// Test account address.
     account_public: String,
-    account_password: String,
-    account_seed: String,
-    // and so on
+    /// Native token decimal.
+    planck_to_one: u8,
 }
 
 impl Config {
@@ -33,92 +27,140 @@ impl Config {
     }
 }
 
+/// Return block hash and timestamp from the latest finalized block height.
 #[tokio::test]
 async fn check_connection() {
-    tracing_subscriber::fmt::init();
-
     let config = Config::read_from_env();
 
-    let api = ClientBuilder::new()
-        .set_url(&config.test_node_url)
-        .build()
+    let height = get_current_height(&config.test_shibuya_node_url)
         .await
-        .unwrap()
-        .to_runtime_api::<polkadot::RuntimeApi<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>>();
+        .unwrap();
 
-    let block_hash = api.client.rpc().block_hash(None).await;
+    let block = get_block(&config.test_shibuya_node_url, height)
+        .await
+        .unwrap();
 
-    assert!(block_hash.is_ok());
+    println!("{:?}", block);
 }
 
+/// Return block height of the latest finalized block.
 #[tokio::test]
 async fn check_block_number() {
     let config = Config::read_from_env();
 
-    let api = ClientBuilder::new()
-        .set_url(&config.test_node_url)
-        .build()
+    let result = get_current_height(&config.test_shibuya_node_url)
         .await
-        .unwrap()
-        .to_runtime_api::<polkadot::RuntimeApi<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>>();
+        .unwrap();
 
-    let mut blocks: Subscription<Header<u32, BlakeTwo256>> =
-        api.client.rpc().subscribe_finalized_blocks().await.unwrap();
-
-    let first_block = blocks.next().await.unwrap().expect("failed to read block");
-
-    let second_block = blocks.next().await.unwrap().expect("failed to read block");
-
-    assert!(second_block.number > first_block.number);
+    println!("{:?}", result);
 }
 
-/// Below test will fail since Account 'alice' doesn't have any balance.
-/// It will work on local node or any accounts that have balance.
+/// Return native token, meme token, nft balances.
 #[tokio::test]
-#[ignore]
 async fn check_account() {
     let config = Config::read_from_env();
 
-    let user = crypto::AccountId32::from_str(&config.account_public).unwrap();
-
-    let api = ClientBuilder::new()
-        .set_url(&config.test_node_url)
-        .build()
+    let account = query_account(&config.test_shibuya_node_url, &config.account_public)
         .await
-        .unwrap()
-        .to_runtime_api::<polkadot::RuntimeApi<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>>();
+        .unwrap();
 
-    let account = api.storage().system().account(&user, None).await.unwrap();
-
-    // account.data.free should be larger than account.data.fee_frozen to pay gas fee
-    assert!(account.data.free >= account.data.fee_frozen);
+    println!("{:?}", account);
 }
 
-/// Below test will fail since Account 'alice' doesn't have balance.
-/// It will work on local node or any accounts that have balance.
+/// Transfer the native token.
 #[tokio::test]
-#[ignore]
-async fn transfer() {
+async fn transfer_token() {
     let config = Config::read_from_env();
 
-    let signer = PairSigner::new(AccountKeyring::Alice.pair());
+    let amount_to_transfer = 123_456_789;
 
-    let api = ClientBuilder::new()
-        .set_url(&config.test_node_url)
-        .build()
+    let planck_to_one = config.planck_to_one;
+
+    let result = transfer_native_token(
+        &config.test_shibuya_node_url,
+        &config.account_public,
+        amount_to_transfer,
+        planck_to_one,
+    )
+    .await
+    .unwrap();
+
+    println!("Transaction hash: {}", result);
+}
+
+/// Query the state of deployed contract.
+#[tokio::test]
+async fn check_contract_state() {
+    let config = Config::read_from_env();
+
+    let contract_name = "simple_counter";
+
+    let field = "count"; // get_count
+
+    let result = query_contract_state(
+        &config.test_shibuya_node_url,
+        &config.contract_address,
+        contract_name,
+        field,
+    )
+    .await
+    .unwrap();
+
+    println!("{:?}", result);
+}
+
+/// Send a transaction to deployed contract.
+#[tokio::test]
+async fn execute_contract() {
+    let config = Config::read_from_env();
+
+    let mut argument = Vec::new();
+
+    argument.push("3");
+
+    let contract_name = "simple_counter";
+
+    let method_name = "execute";
+
+    let result = execute_contract_method(
+        &config.test_shibuya_node_url,
+        &config.contract_address,
+        contract_name,
+        method_name,
+        argument,
+    )
+    .await
+    .unwrap();
+
+    println!("{:?}", result);
+}
+
+/// Deploy contract from the contract name.
+#[tokio::test]
+async fn deploy_contract_with_name() {
+    let config = Config::read_from_env();
+
+    let contract_name = "simple_counter";
+
+    let result = deploy_contract(&config.test_shibuya_node_url, contract_name)
         .await
-        .unwrap()
-        .to_runtime_api::<polkadot::RuntimeApi<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>>();
+        .unwrap();
 
-    let dest = AccountKeyring::Bob.to_account_id().into();
+    println!("{:?}", result);
+}
 
-    let tx_hash = api
-        .tx()
-        .balances()
-        .transfer(dest, 123_456_789)
-        .unwrap()
-        .sign_and_submit_then_watch_default(&signer)
-        .await;
+/// Deploy contract from the contract hash.
+#[tokio::test]
+async fn deploy_contract_with_hash() {
+    let config = Config::read_from_env();
 
-    assert!(tx_hash.is_ok());
+    let contract_name = "simple_counter";
+
+    let salt = ""; // Empty string for Null in ts.
+
+    let result = deploy_contract_with_code_hash(&config.test_shibuya_node_url, contract_name, salt)
+        .await
+        .unwrap();
+
+    println!("{:?}", result);
 }

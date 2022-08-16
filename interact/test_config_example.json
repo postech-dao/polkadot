@@ -1,7 +1,8 @@
 {
     "test_local_node_url": "ws://127.0.0.1:9944",
-    "test_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
-    "account_public": "example.public",
-    "account_password": "example.password",
-    "account_seed": "example.seed"
+    "test_rococo_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
+    "test_shibuya_node_url": "wss://shibuya-rpc.dwellir.com:443",
+    "contract_address": "Z6cE3j1ZdfnQvqkx1jdjSHmjgFVnjY2tSsVTv9YPoLnjfHa",
+    "account_public": "Wb3hWZDmozU9vUgM5b64q7AECoQgTLigFSKLz4jU9pYTonV",
+    "planck_to_one": 18
 }
