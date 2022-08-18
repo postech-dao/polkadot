@@ -27,7 +27,7 @@ impl Config {
     }
 }
 
-/// Return block hash and timestamp from the latest finalized block height.
+/// Return block hash and timestamp from the latest block height.
 #[tokio::test]
 async fn check_connection() {
     let config = Config::read_from_env();
@@ -95,7 +95,7 @@ async fn check_contract_state() {
 
     let contract_name = "simple_counter";
 
-    let field = "count"; // get_count
+    let field = "auth"; // get_count
 
     let result = query_contract_state(
         &config.test_shibuya_node_url,
@@ -118,9 +118,11 @@ async fn execute_contract() {
 
     argument.push("3");
 
+    argument.push(config.account_public.as_str());
+
     let contract_name = "simple_counter";
 
-    let method_name = "execute";
+    let method_name = "init";
 
     let result = execute_contract_method(
         &config.test_shibuya_node_url,
@@ -140,9 +142,13 @@ async fn execute_contract() {
 async fn deploy_contract_with_name() {
     let config = Config::read_from_env();
 
+    let mut argument = Vec::new();
+
+    argument.push("5");
+
     let contract_name = "simple_counter";
 
-    let result = deploy_contract(&config.test_shibuya_node_url, contract_name)
+    let result = deploy_contract(&config.test_shibuya_node_url, contract_name, argument)
         .await
         .unwrap();
 
@@ -154,11 +160,15 @@ async fn deploy_contract_with_name() {
 async fn deploy_contract_with_hash() {
     let config = Config::read_from_env();
 
+    let mut argument = Vec::new();
+
+    argument.push("5");
+
     let contract_name = "simple_counter";
 
     let salt = ""; // Empty string for Null in ts.
 
-    let result = deploy_contract_with_code_hash(&config.test_shibuya_node_url, contract_name, salt)
+    let result = deploy_contract_with_code_hash(&config.test_shibuya_node_url, contract_name, argument, salt)
         .await
         .unwrap();
 

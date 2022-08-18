@@ -23,20 +23,20 @@ pub struct Account {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
-pub struct ContractTx {
-    contract_name: String,
-    message_name: String,
-    message_type: String,
-    tx_hash: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all(deserialize = "camelCase"))]
 pub struct ContractQuery {
     contract_name: String,
     message_name: String,
     message_type: String,
     output: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct ContractTx {
+    contract_name: String,
+    message_name: String,
+    message_type: String,
+    tx_hash: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -183,6 +183,7 @@ pub async fn execute_contract_method(
 pub async fn deploy_contract(
     full_node_uri: &str,
     contract_name: &str,
+    arguments: Vec<&str>,
 ) -> Result<ContractDeploy, Box<dyn Error>> {
     let path = "contract/deploy";
     dotenv().expect("failed to read .env file");
@@ -191,6 +192,7 @@ pub async fn deploy_contract(
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
         "contractName": contract_name,
+        "arguments": arguments,
     });
 
     let result = get_response(path, data).await;
@@ -204,6 +206,7 @@ pub async fn deploy_contract(
 pub async fn deploy_contract_with_code_hash(
     full_node_uri: &str,
     contract_name: &str,
+    arguments: Vec<&str>,
     salt: &str,
 ) -> Result<ContractDeploy, Box<dyn Error>> {
     let path = "contract-from-code-hash/deploy";
@@ -213,6 +216,7 @@ pub async fn deploy_contract_with_code_hash(
         "fullNodeUri": full_node_uri,
         "mnemonic": std::env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
         "contractName": contract_name,
+        "arguments": arguments,
         "salt": salt,
     });
 
