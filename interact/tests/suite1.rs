@@ -168,9 +168,14 @@ async fn deploy_contract_with_hash() {
 
     let salt = ""; // Empty string for Null in ts.
 
-    let result = deploy_contract_with_code_hash(&config.test_shibuya_node_url, contract_name, argument, salt)
-        .await
-        .unwrap();
+    let result = deploy_contract_with_code_hash(
+        &config.test_shibuya_node_url,
+        contract_name,
+        argument,
+        salt,
+    )
+    .await
+    .unwrap();
 
     println!("{:?}", result);
 }
