@@ -1,0 +1,42 @@
+[package]
+name = "client"
+version = "0.1.0"
+authors = ["PDAO Team <hello@postech-dao.xyz>"]
+edition = "2021"
+include = ["src/**/*", "Cargo.toml"]
+repository = "https://github.com/postech-dao/polkadot"
+
+[dependencies]
+ink_prelude = { version = "3", default-features = false }
+ink_primitives = { version = "3", default-features = false }
+ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3", default-features = false }
+ink_storage = { version = "3", default-features = false }
+ink_lang = { version = "3", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+pdao-colony-contract-common = { version = "0.0.0" }
+
+[lib]
+name = "client"
+path = "lib.rs"
+crate-type = [
+    # Used for normal contract Wasm blobs.
+    "cdylib",
+    # Used for ABI generation.
+    "rlib",
+]
+
+[features]
+default = ["std"]
+std = [
+    "ink_prelude/std",
+    "ink_metadata/std",
+    "ink_env/std",
+    "ink_storage/std",
+    "ink_primitives/std",
+    "scale/std",
+    "scale-info/std",
+]
+ink-as-dependency = []
