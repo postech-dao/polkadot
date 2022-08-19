@@ -1,6 +1,6 @@
+use ink_prelude::vec::Vec;
 use pdao_polkadot_interact::*;
 use serde::{Deserialize, Serialize};
-use ink_prelude::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -49,11 +49,15 @@ async fn check_connection() {
 async fn check_block_number() {
     let config = Config::read_from_env();
 
-    let result = get_current_height(&config.test_shibuya_node_url)
+    let first_block = get_current_height(&config.test_shibuya_node_url)
         .await
         .unwrap();
 
-    println!("{:?}", result);
+    let second_block = get_current_height(&config.test_shibuya_node_url)
+        .await
+        .unwrap();
+
+    assert!(first_block < second_block);
 }
 
 /// Return native token, meme token, nft balances.
@@ -65,7 +69,9 @@ async fn check_account() {
         .await
         .unwrap();
 
-    println!("{:?}", account);
+    let account_balance = account.native_token.parse::<u64>().unwrap();
+
+    assert!(account_balance > 1_000_000_000);
 }
 
 /// Transfer the native token.
@@ -107,7 +113,10 @@ async fn check_contract_state() {
     .await
     .unwrap();
 
-    println!("{:?}", result);
+    assert_eq!(
+        result.output[0],
+        "YtyhRxkUA5gAPsFXQzQKdexK4GUCaiDqk8RrQtU4FiwNYHY"
+    );
 }
 
 /// Send a transaction to deployed contract.
@@ -157,6 +166,8 @@ async fn deploy_contract_with_name() {
 }
 
 /// Deploy contract from the contract hash.
+/// Below test will be failed cause we already used the empty salt for testing.
+#[ignore]
 #[tokio::test]
 async fn deploy_contract_with_hash() {
     let config = Config::read_from_env();
