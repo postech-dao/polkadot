@@ -6,14 +6,12 @@ import {
   deployWithContractName,
   getBlockInfo,
   getCurrentHeight,
-  getPairFromSeed,
   getTotalBalance,
   query,
   sendContractTx,
   transferNativeToken,
 } from "./interact.ts";
-import { KeyringPair } from "https://deno.land/x/polkadot@0.0.9/keyring/types.ts";
-import type { AnyJson } from "https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts";
+import type { AnyJson} from 'https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts';
 
 const port = 8080;
 const app = new Application();
@@ -98,12 +96,18 @@ router.post("/contract-state", async (ctx) => {
   try {
     if (!ctx.request.hasBody) ctx.throw(415);
     const reqBody = await ctx.request.body().value;
-    const output: string = await query(
+    const result: AnyJson = await query(
       reqBody.fullNodeUri,
       reqBody.contractName,
       reqBody.contractAddr,
       reqBody.field,
     );
+    let output: string[] | string;
+    if(result?.toString()) {
+      output = result?.toString().split(",")
+    } else {
+      throw new Error("query result error");
+    }
     ctx.response.body = {
       success: true,
       data: {
@@ -188,10 +192,12 @@ router.post("/contract/deploy", async (ctx) => {
   try {
     if (!ctx.request.hasBody) ctx.throw(415);
     const reqBody = await ctx.request.body().value;
+    const params = [...reqBody.arguments];
     const { contractAddr, txHash } = await deployWithContractName(
       reqBody.fullNodeUri,
       reqBody.mnemonic,
       reqBody.contractName,
+      params
     );
     ctx.response.body = {
       success: true,
@@ -214,6 +220,7 @@ router.post("/contract-from-code-hash/deploy", async (ctx) => {
   try {
     if (!ctx.request.hasBody) ctx.throw(415);
     const reqBody = await ctx.request.body().value;
+    const params = [...reqBody.arguments];
     let salt: string | null;
     reqBody.salt === "null" ? salt = null : salt = reqBody.salt;
     if (reqBody.salt === null) salt = null;
@@ -222,6 +229,7 @@ router.post("/contract-from-code-hash/deploy", async (ctx) => {
       reqBody.mnemonic,
       reqBody.contractName,
       salt,
+      params,
     );
     ctx.response.body = {
       success: true,

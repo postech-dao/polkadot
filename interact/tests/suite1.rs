@@ -1,5 +1,6 @@
 use pdao_polkadot_interact::*;
 use serde::{Deserialize, Serialize};
+use ink_prelude::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -116,13 +117,13 @@ async fn execute_contract() {
 
     let mut argument = Vec::new();
 
-    argument.push("3");
+    //argument.push("3");
 
     argument.push(config.account_public.as_str());
 
     let contract_name = "simple_counter";
 
-    let method_name = "init";
+    let method_name = "remove_auth";
 
     let result = execute_contract_method(
         &config.test_shibuya_node_url,

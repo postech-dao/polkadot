@@ -1,3 +1,5 @@
+
+
 import { Keyring } from "https://deno.land/x/polkadot@0.0.9/keyring/mod.ts";
 import {
   ApiPromise,
@@ -8,11 +10,10 @@ import {
   CodePromise,
   ContractPromise,
 } from "https://deno.land/x/polkadot@0.0.9/api-contract/mod.ts";
-import type { AnyJson } from "https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts";
 import fs from "https://deno.land/std@0.115.1/node/fs/promises.ts";
 import {
   assert,
-  assertEquals,
+  assertThrows
 } from "https://deno.land/std@0.149.0/testing/asserts.ts";
 import { KeyringPair } from "https://deno.land/x/polkadot@0.0.9/keyring/types.ts";
 import { SubmittableExtrinsic } from "https://deno.land/x/polkadot@0.0.9/api/submittable/types.ts";
@@ -20,17 +21,20 @@ import { CodeSubmittableResult } from "https://deno.land/x/polkadot@0.0.9/api-co
 import { BlueprintSubmittableResult } from "https://deno.land/x/polkadot@0.0.9/api-contract/base/Blueprint.ts";
 import { ApiTypes } from "https://deno.land/x/polkadot@0.0.9/api-base/types/index.ts";
 import type {} from "https://deno.land/x/polkadot@0.0.9/api-augment/mod.ts";
+import type { AnyJson} from 'https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts';
 import { ABI_PATH, ABI_PATH_OPTIONS } from "./abi.ts";
 import {
   CONTRACT,
   LIGHT_CLIENT_QUERY,
   LIGHT_CLIENT_TX_METHOD,
   SIMPLE_COUNTER_QUERY,
+  SIMPLE_COUNTER_TX,
   SIMPLE_COUNTER_TX_METHOD,
   TREASURY_QUERY,
   TREASURY_TX_METHOD,
 } from "./contract.ts";
-import { getBlock } from "https://deno.land/x/polkadot@0.0.9/api-derive/chain/getBlock.ts";
+import { RPC_ENDPOINT, SS58_FORMAT, TESTNET_MNEMONIC } from "./enum.ts";
+
 
 const toCamelCase = (str: string): string => {
   return str.toLowerCase().replace(
@@ -58,67 +62,113 @@ export const getPairFromSeed = (mnemonic: string): KeyringPair => {
   return pair;
 };
 
-// get free balance
-// const getFreeBalance = async (address: string): Promise<bigint> => {
-//   const wsProvider: WsProvider = new WsProvider(
-//     "wss://rococo-contracts-rpc.polkadot.io:443",
-//   );
-//   const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
-//   const { data: balance } = await api.query.system.account(address);
-//   const freeBalance = BigInt(balance?.free.toHuman().replace(/\,/g, "")); // 1 DOT = 1,000,000,000,000,000
-//   // console.log(freeBalance);
-//   return freeBalance;
-// };
+export const getPairFromSeedWithSS58 = (
+  mnemonic: string,
+  format: SS58_FORMAT,
+): KeyringPair => {
+  const seed: string = mnemonic;
+  const keyring: Keyring = new Keyring({ type: "sr25519" });
+  keyring.setSS58Format(format);
+  const pair: KeyringPair = keyring.addFromUri(seed);
+  return pair;
+};
 
-// get reserved balance
-// const getReservedBalance = async (address: string): Promise<bigint> => {
-//   const wsProvider: WsProvider = new WsProvider(
-//     "wss://rococo-contracts-rpc.polkadot.io:443",
-//   );
-//   const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
-//   const { data: balance } = await api.query.system.account(address);
-//   const reservedBalance = BigInt(
-//     balance?.reserved.toHuman().replace(/\,/g, ""),
-//   ); // 1 DOT = 1,000,000,000,000,000
-//   // console.log(reservedBalance);
-//   return reservedBalance;
-// };
 
-// get total balance
+// test: keypair
+Deno.test({
+  name: "keypair test",
+  fn() {
+    const keyring = new Keyring({ type: "sr25519" });
+    const shibuyaPair: KeyringPair = keyring.addFromUri(
+      TESTNET_MNEMONIC.SHIBUYA,
+    );
+    keyring.setSS58Format(SS58_FORMAT.SHIBUYA);
+    assert(
+      shibuyaPair.address === "YtyhRxkUA5gAPsFXQzQKdexK4GUCaiDqk8RrQtU4FiwNYHY",
+    );
+    keyring.setSS58Format(SS58_FORMAT.DEFAULT);
+    assert(
+      shibuyaPair.address ===
+        getPairFromSeedWithSS58(TESTNET_MNEMONIC.SHIBUYA, SS58_FORMAT.DEFAULT)
+          .address,
+    );
+    const rococoPair = getPairFromSeed(TESTNET_MNEMONIC.ROCOCO);
+    assert(
+      rococoPair.address === "5CiTGDb8zaMMw6Sqrn8y3Awt9A6HiEdyf3wB7GrsbnpasVss",
+    );
+    assert(
+      rococoPair.address ===
+        getPairFromSeedWithSS58(TESTNET_MNEMONIC.ROCOCO, SS58_FORMAT.DEFAULT)
+          .address,
+    );
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+const getFreeBalance = async (
+  fullNodeUri: string,
+  address: string,
+): Promise<bigint> => {
+  const provider: WsProvider = new WsProvider(fullNodeUri);
+  const api: ApiPromise = await ApiPromise.create({ provider });
+  const { data: balance } = await api.query.system.account(address);
+  const freeBalance = BigInt(balance?.free.toHuman().replace(/\,/g, ""));
+  // 1 ROC = 1,000,000,000,000,000, 1 SBY = 1,000,000,000,000,000,000
+  return freeBalance;
+};
+
+export const getReservedBalance = async (
+  fullNodeUri: string,
+  address: string,
+): Promise<bigint> => {
+  const provider: WsProvider = new WsProvider(fullNodeUri);
+  const api: ApiPromise = await ApiPromise.create({ provider });
+  const { data: balance } = await api.query.system.account(address);
+  const reservedBalance = BigInt(
+    balance?.reserved.toHuman().replace(/\,/g, ""),
+  );
+  // 1 ROC = 1,000,000,000,000,000, 1 SBY = 1,000,000,000,000,000,000
+  return reservedBalance;
+};
+
 export const getTotalBalance = async (
   fullNodeUri: string,
   address: string,
 ): Promise<bigint> => {
-  const wsProvider: WsProvider = new WsProvider(fullNodeUri);
-  const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
+  const provider: WsProvider = new WsProvider(fullNodeUri);
+  const api: ApiPromise = await ApiPromise.create({ provider });
   const { data: balance } = await api.query.system.account(address);
   const freeBalance = BigInt(balance?.free.toHuman().replace(/\,/g, "")); // 1 ROC = 1,000,000,000,000,000
   const reservedBalance = BigInt(
     balance?.reserved.toHuman().replace(/\,/g, ""),
   ); // 1 ROC = 1,000,000,000,000,000, 1 SBY = 1,000,000,000,000,000,000
-  // console.log(freeBalance);
-  // console.log(reservedBalance);
-  // console.log(freeBalance + reservedBalance);
   return freeBalance + reservedBalance;
 };
-// const balance = await getTotalBalance("wss://shibuya-rpc.dwellir.com:443", "YtyhRxkUA5gAPsFXQzQKdexK4GUCaiDqk8RrQtU4FiwNYHY")
-// console.log(balance);
 
-// Deno.test({
-//   name: "balance test",
-//   async fn() {
-//     const pair: KeyringPair = getTestPair();
-//     const free = await getFreeBalance(pair.address);
-//     const reserved = await getReservedBalance(pair.address);
-//     const total = await getTotalBalance(
-//       "wss://rococo-contracts-rpc.polkadot.io:443",
-//       pair.address,
-//     );
-//     assert(total === (free + reserved));
-//   },
-//   sanitizeResources: false,
-//   sanitizeOps: false,
-// });
+// test: balance
+// check floating point error
+Deno.test({
+  name: "balance test",
+  async fn() {
+    const pair: KeyringPair = getPairFromSeed(TESTNET_MNEMONIC.SHIBUYA);
+    const free = await getFreeBalance(
+      RPC_ENDPOINT.SHIBUYA,
+      pair.address,
+    );
+    const reserved = await getReservedBalance(
+      RPC_ENDPOINT.SHIBUYA,
+      pair.address,
+    );
+    const total = await getTotalBalance(
+      RPC_ENDPOINT.SHIBUYA,
+      pair.address,
+    );
+    assert(free + reserved === total);
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
 
 export const getAbiFromContractName = async (name: string): Promise<string> => {
   let path: ABI_PATH_OPTIONS;
@@ -143,7 +193,7 @@ export const query = async (
   contractName: string,
   contractAddr: string,
   field: string,
-): Promise<string> => {
+): Promise<AnyJson> => {
   const provider: WsProvider = new WsProvider(fullNodeUri);
   const api: ApiPromise = await ApiPromise.create({ provider });
   const abi: string = await getAbiFromContractName(contractName);
@@ -152,7 +202,7 @@ export const query = async (
   const storageDepositLimit = null;
 
   const contract: ContractPromise = new ContractPromise(api, abi, contractAddr);
-  let res: string;
+  let res: AnyJson;
   let messageName: SIMPLE_COUNTER_QUERY | LIGHT_CLIENT_QUERY | TREASURY_QUERY;
   switch (contractName) {
     case CONTRACT.SIMPLE_COUNTER:
@@ -172,16 +222,14 @@ export const query = async (
   console.log("storageDeposit: ", storageDeposit.toHuman());
   console.log("gasRequire: ", gasRequired.toHuman());
   console.log("result: ", result.toHuman());
-  console.log("output", output?.toHuman());
-  if (output && output.toString()) {
-    res = output.toString();
+  console.log("output: ", output?.toHuman());
+  if (output && output.toHuman()) {
+    res = output.toHuman();
   } else {
     throw new Error("output is invalid");
   }
   return res;
 };
-// const testQuery = await query("wss://shibuya-rpc.dwellir.com:443", "simple_counter", "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf", "count");
-// console.log(testQuery);
 
 export const sendContractTx = async (
   fullNodeUri: string,
@@ -196,7 +244,7 @@ export const sendContractTx = async (
   const abi: string = await getAbiFromContractName(contractName);
   const pair: KeyringPair = getPairFromSeed(mnemonic);
   const gasLimit: bigint = 30000n * 1000000n;
-  const storageDepositLimit = 10000000; // 수정해야할 수도 있음
+  const storageDepositLimit = null;
   const contract: ContractPromise = new ContractPromise(api, abi, contractAddr);
   let messageName:
     | SIMPLE_COUNTER_TX_METHOD
@@ -215,7 +263,7 @@ export const sendContractTx = async (
     default:
       throw new Error("contract name is invalid");
   }
-  let hash: string | undefined = undefined;
+  let _txHash: string | undefined = undefined;
   await contract.tx[messageName](
     { storageDepositLimit, gasLimit },
     ...methodParams,
@@ -223,38 +271,205 @@ export const sendContractTx = async (
     .signAndSend(pair, (result) => {
       if (result.status.isInBlock) {
         console.log("in a block");
-        // console.log("in a block : ", result);
+        const { txHash } = result;
+        _txHash = txHash.toString();
       } else if (result.status.isFinalized) {
         console.log("finalized");
-        // console.log("finalized : ", result);
-        const { txHash } = result;
-        hash = txHash.toString();
       }
     });
   return new Promise((res, rej) => {
     let count = 0;
-    const MAX_COUNT = 120;
+    const MAX_COUNT = 240;
     const timer = setInterval(() => {
       count++;
-      if (hash !== undefined) {
-        res(hash);
+      if (_txHash !== undefined) {
+        res(_txHash);
         clearInterval(timer);
       } else if (count > MAX_COUNT) {
-        rej(new Error("Timeout: over 60 seconds"));
+        rej(new Error("Timeout: over 120 seconds"));
       }
     }, 500);
   });
 };
-// const testContractTx = await sendContractTx(
-//   "wss://rococo-contracts-rpc.polkadot.io:443",
-//   "where sign course conduct include wide because skull boss slice close tomorrow",
-//   "simple_counter",
-//   "5DDD98nuSmshMy1RjFCoM4vy44VqU5EdgVPJHagmefpMGkr5",
-//   "execute",
-//   ["5"],
-// );
-// console.log('txHash: ', testContractTx);
-type contractDeploymentInfo = {
+
+// contract test: simple_counter; execute method
+Deno.test({
+  name: "simple_counter query and tx test: execute",
+  async fn() {
+    // Many transactions between queries can make it fail
+    const SIMPLE_COUNTER_ADDR = "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
+    const INPUT = 5;
+    const prevCount = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    const txHash = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "execute",
+      [INPUT],
+    );
+    console.log("txHash: ", txHash);
+    const subsequentCount = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    if(subsequentCount && prevCount) assert(parseInt(subsequentCount?.toString()) - parseInt(prevCount?.toString()) === INPUT);
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+// contract test: simple_counter; increment & decrement method
+Deno.test({
+  name: "simple_counter query and tx test: increment & decrement",
+  async fn() {
+    const SIMPLE_COUNTER_ADDR = "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
+    // increment
+    const prevCount = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    const txHash = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "increment",
+      []
+    );
+    console.log("txHash: ", txHash);
+    const countAfterInc = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    // assert(parseInt(countAfterInc) - parseInt(prevCount) === 1);
+    
+    //decrement
+    const txHash2 = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "decrement",
+      []
+    );
+    console.log("txHash2: ", txHash2);
+    const countAfterDec = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    if(countAfterInc && prevCount) assert(parseInt(countAfterInc?.toString()) - parseInt(prevCount?.toString()) === 1);
+    if(countAfterDec && prevCount) assert(parseInt(countAfterDec?.toString()) === parseInt(prevCount?.toString()));
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+// contract test: simple_counter; reset
+Deno.test({
+  name: "simple_counter query and tx test: reset",
+  async fn() {
+    const SIMPLE_COUNTER_ADDR = "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
+    const txHash = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "increment",
+      []
+    );
+    console.log("txHash: ", txHash);
+    const txHash2 = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "reset",
+      []
+    );
+    console.log("txHash2: ", txHash2);
+    const countAfterReset = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "count",
+    );
+    if(countAfterReset) assert(parseInt(countAfterReset.toString()) === 0);
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+// contract test: simple_counter; reset
+Deno.test({
+  name: "simple_counter query and tx test: addAuth and removeAuth",
+  async fn() {
+    const SIMPLE_COUNTER_ADDR = "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
+    const AUTH_ADDR = "YtUkPWDB1thp87L9UeYUwx9nWNYv9JtvFihRzUWrnZ3j7zm";
+    const prevList = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "auth",
+    );
+    const prevAuthList = prevList?.toString().split(",");
+    const txHash = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "add_auth",
+      [AUTH_ADDR]
+    );
+    console.log("txHash", txHash);
+    const listAfterAdd = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "auth",
+    );
+    const authListAfterAdd = listAfterAdd?.toString().split(",");
+    const txHash2 = await sendContractTx(
+      RPC_ENDPOINT.SHIBUYA,
+      TESTNET_MNEMONIC.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "remove_auth",
+      [AUTH_ADDR]
+      );
+    console.log("txHash2", txHash2);
+    const listAfterRemove = await query(
+      RPC_ENDPOINT.SHIBUYA,
+      CONTRACT.SIMPLE_COUNTER,
+      SIMPLE_COUNTER_ADDR,
+      "auth",
+    );
+    const authListAfterRemove = listAfterRemove?.toString().split(",");
+    console.log("prev: ", prevAuthList);
+    console.log("after add: ", authListAfterAdd);
+    console.log("after remove: ", authListAfterRemove);
+    if (authListAfterAdd && prevAuthList) assert(authListAfterAdd?.length - prevAuthList?.length === 1);
+    if (authListAfterAdd && authListAfterRemove) assert(authListAfterAdd?.length - authListAfterRemove?.length === 1);
+    authListAfterAdd && prevAuthList ? assert(authListAfterAdd[prevAuthList.length] === AUTH_ADDR) : assert(false, "addAuth does not occur");
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+export type contractDeploymentResult = {
   contractAddr: string;
   txHash: string;
 };
@@ -263,9 +478,10 @@ export const deployWithContractName = async (
   fullNodeUri: string,
   mnemonic: string,
   contractName: string,
-): Promise<contractDeploymentInfo> => {
-  const wsProvider = new WsProvider(fullNodeUri);
-  const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
+  params: any[],
+): Promise<contractDeploymentResult> => {
+  const provider = new WsProvider(fullNodeUri);
+  const api: ApiPromise = await ApiPromise.create({ provider: provider });
   const abi: string = await getAbiFromContractName(contractName);
   const wasm: string = JSON.parse(abi).source.wasm;
   const code: CodePromise = new CodePromise(api, abi, wasm);
@@ -274,11 +490,10 @@ export const deployWithContractName = async (
   const keyring: Keyring = new Keyring({ type: "sr25519" });
   const pair: KeyringPair = keyring.addFromUri(seed);
 
-  const initCount = 10;
   const gasLimit = 100000n * 1000000n;
   const storageDepositLimit: number | null = null;
   const tx: SubmittableExtrinsic<"promise", CodeSubmittableResult<ApiTypes>> =
-    code.tx.new({ gasLimit, storageDepositLimit }, initCount);
+    code.tx.new({ gasLimit, storageDepositLimit }, ...params);
   let address: string | undefined = undefined;
   let hash: string | undefined = undefined;
   const unsub = await tx.signAndSend(pair, ({ contract, status, txHash }) => {
@@ -291,28 +506,26 @@ export const deployWithContractName = async (
   });
   return new Promise((res, rej) => {
     let count = 0;
-    const MAX_COUNT = 120;
+    const MAX_COUNT = 60;
     const timer = setInterval(() => {
       count++;
       if (address !== undefined && hash !== undefined) {
         res({ contractAddr: address, txHash: hash });
         clearInterval(timer);
       } else if (count > MAX_COUNT) {
-        rej(new Error("Timeout: over 60 seconds"));
+        rej(new Error("Timeout: over 30 seconds"));
       }
     }, 500);
   });
 };
-
-// const deployTest = await deployWithContractName("wss://rococo-contracts-rpc.polkadot.io:443", 'where sign course conduct include wide because skull boss slice close tomorrow', 'simple_counter');
-// console.log("deployed contract address: ", deployTest);
 
 export const deployWithCodeHash = async (
   fullNodeUri: string,
   mnemonic: string,
   contractName: string,
   salt: string | null,
-): Promise<contractDeploymentInfo> => {
+  params: any[],
+): Promise<contractDeploymentResult> => {
   const wsProvider = new WsProvider(fullNodeUri);
   const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
   const abi: string = await getAbiFromContractName(contractName);
@@ -323,13 +536,12 @@ export const deployWithCodeHash = async (
   const keyring: Keyring = new Keyring({ type: "sr25519" });
   const pair: KeyringPair = keyring.addFromUri(seed);
 
-  const initCount = 10;
   const gasLimit = 100000n * 1000000n;
   const storageDepositLimit: number | null = null;
   const tx: SubmittableExtrinsic<
     "promise",
     BlueprintSubmittableResult<ApiTypes>
-  > = blueprint.tx.new({ gasLimit, storageDepositLimit, salt }, initCount);
+  > = blueprint.tx.new({ gasLimit, storageDepositLimit, salt }, ...params);
 
   let address: string | undefined = undefined;
   let _txHash: string | undefined = undefined;
@@ -343,42 +555,18 @@ export const deployWithCodeHash = async (
   });
   return new Promise((res, rej) => {
     let count = 0;
-    const MAX_COUNT = 120;
+    const MAX_COUNT = 60;
     const timer = setInterval(() => {
       count++;
       if (address !== undefined && _txHash !== undefined) {
         res({ contractAddr: address, txHash: _txHash });
         clearInterval(timer);
       } else if (count > MAX_COUNT) {
-        rej(new Error("Timeout: over 60 seconds"));
+        rej(new Error("Timeout: over 30 seconds"));
       }
     }, 500);
   });
 };
-// const bpTest = await deployWithCodeHash(
-//   "wss://rococo-contracts-rpc.polkadot.io:443",
-//   "니모닉",
-//   "simple_counter",
-//   "10",
-// );
-// console.log(bpTest);
-
-const listenToNewBlock = async () => {
-  const wsProvider = new WsProvider(
-    "wss://rococo-contracts-rpc.polkadot.io:443",
-  );
-  const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
-  let count = 0;
-  const unsubscribe = await api.rpc.chain.subscribeNewHeads((header) => {
-    console.log(`Chain is at block: #${header.number}`);
-
-    if (++count === 2) {
-      unsubscribe();
-      Deno.exit(0);
-    }
-  });
-};
-// await listenToNewBlock();
 
 export type BlockInfo = {
   blockHash: string;
@@ -394,15 +582,12 @@ export const getBlockInfo = async (
   const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
   const signedBlock = await api.rpc.chain.getBlock(blockHash);
   const { block: { extrinsics } } = signedBlock;
-  const ex = extrinsics[0];
+  const ex = extrinsics[0]; // rococo-contracts: extrinsic[1]
   const { args } = ex;
   const timestamp = parseInt(args[0].toString());
   const blockInfo = { blockHash: blockHash.toHex(), timestamp };
   return blockInfo;
 };
-const test = await getBlockInfo("wss://shibuya-rpc.dwellir.com:443", 2046251);
-console.log(test);
-
 
 export const getCurrentHeight = async (
   fullNodeUri: string,
@@ -412,7 +597,6 @@ export const getCurrentHeight = async (
   const { block: { header: { number } } } = await api.rpc.chain.getBlock();
   return parseInt(number.toString());
 };
-// await getCurrentHeight();
 
 export const transferNativeToken = async (
   fullNodeUri: string,
@@ -425,10 +609,5 @@ export const transferNativeToken = async (
   const pair: KeyringPair = getPairFromSeed(mnemonic);
   const transfer = api.tx.balances.transfer(to, amountInUnits);
   const hash = await transfer.signAndSend(pair);
-  // console.log(hash);
   return hash.toHex();
 };
-// transfer 0.1 ROC
-// await transferNativeToken("wss://rococo-contracts-rpc.polkadot.io:443", '니모닉', '5CiR2BqPzn1yEVUMLPFvdiiAzJVPkr4qE2DPrGx3KBzaQ6rz', 100000000000);
-// let test = BigInt("123456789123456789")
-// console.log(test.toString());

@@ -27,7 +27,7 @@ pub struct ContractQuery {
     contract_name: String,
     message_name: String,
     message_type: String,
-    output: String,
+    output: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
