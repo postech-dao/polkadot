@@ -1,5 +1,4 @@
-import * as oak from "https://deno.land/x/oak@v10.6.0/mod.ts";
-import { Application, Router } from "https://deno.land/x/oak/mod.ts";
+import { Application, Router } from "https://deno.land/x/oak@v10.6.0/mod.ts";
 import {
   BlockInfo,
   deployWithCodeHash,
@@ -11,7 +10,7 @@ import {
   sendContractTx,
   transferNativeToken,
 } from "./interact.ts";
-import type { AnyJson} from 'https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts';
+import type { AnyJson } from "https://deno.land/x/polkadot@0.0.9/types-codec/types/index.ts";
 
 const port = 8080;
 const app = new Application();
@@ -103,8 +102,8 @@ router.post("/contract-state", async (ctx) => {
       reqBody.field,
     );
     let output: string[] | string;
-    if(result?.toString()) {
-      output = result?.toString().split(",")
+    if (result?.toString()) {
+      output = result?.toString().split(",");
     } else {
       throw new Error("query result error");
     }
@@ -130,16 +129,12 @@ router.post("/native-token/transfer", async (ctx) => {
   try {
     if (!ctx.request.hasBody) ctx.throw(415);
     const reqBody = await ctx.request.body().value;
-    const amount: bigint = reqBody.amount;
-    if (amount > Number.MAX_SAFE_INTEGER) {
-      throw new Error("The number of amount exceeds MAX_VALUE");
-    }
-    const amountInPlanck = Number(amount);
+    const amountInUnits: bigint = reqBody.amount;
     const txHash: string = await transferNativeToken(
       reqBody.fullNodeUri,
       reqBody.mnemonic,
       reqBody.toAddr,
-      amountInPlanck,
+      amountInUnits,
     );
 
     ctx.response.body = {
@@ -197,7 +192,7 @@ router.post("/contract/deploy", async (ctx) => {
       reqBody.fullNodeUri,
       reqBody.mnemonic,
       reqBody.contractName,
-      params
+      params,
     );
     ctx.response.body = {
       success: true,
