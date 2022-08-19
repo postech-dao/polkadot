@@ -13,6 +13,13 @@ impl ColonyChain for Astar {
         "astar".to_owned()
     }
 
+    async fn get_last_block(&self) -> Result<Block, Error> {
+        Ok(Block {
+            height: 0,
+            timestamp: 0,
+        })
+    }
+
     async fn check_connection(&self) -> Result<(), Error> {
         Ok(())
     }
