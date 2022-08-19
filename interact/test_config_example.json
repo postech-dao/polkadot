@@ -1,6 +1,8 @@
 {
-    "full_node_url": "https://example.com",
-    "account_public": "example.testnet.public",
-    "account_private": "example.testnet.private",
-    "wasm_binary_path": "example/path"
+    "test_local_node_url": "ws://127.0.0.1:9944",
+    "test_rococo_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
+    "test_shibuya_node_url": "wss://shibuya-rpc.dwellir.com:443",
+    "contract_address": "aeQtHkL7ENgfVYwiMZNYgz2GeRa75B2cSaVz1AFjZ9omRtv",
+    "account_public": "Wb3hWZDmozU9vUgM5b64q7AECoQgTLigFSKLz4jU9pYTonV",
+    "planck_to_one": 18
 }
