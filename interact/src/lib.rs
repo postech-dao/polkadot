@@ -9,42 +9,42 @@ const HTTP_SERVER: &str = "http://localhost:8080/";
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct Block {
-    block_hash: String,
-    timestamp: u64,
+    pub block_hash: String,
+    pub timestamp: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct Account {
-    native_token: String,
-    meme_token: String,
-    non_fungible_token: String,
+    pub native_token: String,
+    pub meme_token: String,
+    pub non_fungible_token: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct ContractQuery {
-    contract_name: String,
-    message_name: String,
-    message_type: String,
-    output: Vec<String>,
+    pub contract_name: String,
+    pub message_name: String,
+    pub message_type: String,
+    pub output: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct ContractTx {
-    contract_name: String,
-    message_name: String,
-    message_type: String,
-    tx_hash: String,
+    pub contract_name: String,
+    pub message_name: String,
+    pub message_type: String,
+    pub tx_hash: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct ContractDeploy {
-    contract_name: String,
-    contract_addr: String,
-    tx_hash: String,
+    pub contract_name: String,
+    pub contract_addr: String,
+    pub tx_hash: String,
 }
 
 /// Return JSON response from path and data.
