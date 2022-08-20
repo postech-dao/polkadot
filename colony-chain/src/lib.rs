@@ -1,6 +1,7 @@
 use async_trait::async_trait;
-use pbc_colony_common::*;
-use pbc_contract_common::*;
+use pdao_colony_common::*;
+use pdao_colony_contract_common::*;
+use pdao_beacon_chain_common::message;
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
@@ -11,6 +12,13 @@ pub struct Astar {}
 impl ColonyChain for Astar {
     async fn get_chain_name(&self) -> String {
         "astar".to_owned()
+    }
+
+    async fn get_last_block(&self) -> Result<Block, Error> {
+        Ok(Block {
+            height: 0,
+            timestamp: 0,
+        })
     }
 
     async fn check_connection(&self) -> Result<(), Error> {
@@ -83,7 +91,8 @@ impl ColonyChain for Astar {
     async fn deliver_custom_order(
         &self,
         _contract_name: &str,
-        _message: CustomMessage,
+        //_message: CustomMessage,
+        _message: message::Custom,
         _block_height: u64,
         _proof: MerkleProof,
     ) -> Result<(), Error> {
