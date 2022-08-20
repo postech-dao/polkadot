@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use pdao_colony_common::*;
 use pdao_colony_contract_common::*;
+use pdao_beacon_chain_common::message;
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
@@ -90,7 +91,8 @@ impl ColonyChain for Astar {
     async fn deliver_custom_order(
         &self,
         _contract_name: &str,
-        _message: CustomMessage,
+        //_message: CustomMessage,
+        _message: message::Custom,
         _block_height: u64,
         _proof: MerkleProof,
     ) -> Result<(), Error> {
