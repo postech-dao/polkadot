@@ -13,7 +13,7 @@ rust_decimal = "1.25.0"
 rust_decimal_macros = "1.25.0"
 pdao-colony-common = { version = "0.1.0" }
 pdao-colony-contract-common = { version = "0.0.0" }
-pdao-polkadot-chain-common = { version = "0.0.0" }
+pdao-beacon-chain-common = { version = "0.0.0" }
 serde-tc = "0.3.3"
 serde_json = { version = "1.0" }
 anyhow = { version = "1.0" }
