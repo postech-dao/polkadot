@@ -18,4 +18,4 @@ WORKDIR /src
 COPY --from=builder-backend /src/target/x86_64-unknown-linux-musl/release/pdao-polkadot-colony-chain ./
 
 ENV RUST_LOG=debug 
-CMD ["./pdao-polkadot-colony-chain", "4040"]
+CMD ["./pdao-polkadot-colony-chain", "8080"]
