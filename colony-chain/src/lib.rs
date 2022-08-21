@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use pdao_beacon_chain_common::message as polkadot_message;
 use pdao_colony_common::*;
 use pdao_colony_contract_common::*;
-use pdao_polkadot_colony_chain::message as polkadot_message;
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
@@ -67,8 +67,7 @@ impl ColonyChain for Astar {
     }
 
     async fn update_light_client(
-        &self, 
-        //_message: LightClientUpdateMessage,
+        &self,
         _header: light_client::Header,
         _proof: light_client::BlockFinalizationProof,
     ) -> Result<(), Error> {
