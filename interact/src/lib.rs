@@ -1,8 +1,9 @@
 extern crate dotenv;
+use anyhow::Result;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{env, error::Error, fmt::Debug};
+use std::{env, fmt::Debug};
 
 const HTTP_SERVER: &str = "http://localhost:8080/";
 
@@ -65,7 +66,7 @@ pub async fn get_response(path: &str, data: Value) -> Value {
 }
 
 /// Return the current block height.
-pub async fn get_current_height(full_node_uri: &str) -> Result<u64, Box<dyn Error>> {
+pub async fn get_current_height(full_node_uri: &str) -> Result<u64> {
     let path = "current-height";
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -77,7 +78,7 @@ pub async fn get_current_height(full_node_uri: &str) -> Result<u64, Box<dyn Erro
 }
 
 /// Return the current block hash and timestamp.
-pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block, Box<dyn Error>> {
+pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block> {
     let path = "block-info";
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -92,7 +93,7 @@ pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block, Box<dy
 }
 
 /// Return the native token, meme token(TBD), nft(TBD) balance of the given account.
-pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account, Box<dyn Error>> {
+pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account> {
     let path = "account-info";
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -112,7 +113,7 @@ pub async fn transfer_native_token(
     receiver_public_key: &str,
     amount: u64,
     planck_to_one: u8,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let path = "native-token/transfer";
     dotenv().expect("failed to read .env file");
 
@@ -135,7 +136,7 @@ pub async fn query_contract_state(
     contract_addr: &str,
     contract_name: &str,
     field: &str,
-) -> Result<ContractQuery, Box<dyn Error>> {
+) -> Result<ContractQuery> {
     let path = "contract-state";
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -158,7 +159,7 @@ pub async fn execute_contract_method(
     contract_name: &str,
     method_name: &str,
     arguments: Vec<&str>,
-) -> Result<ContractTx, Box<dyn Error>> {
+) -> Result<ContractTx> {
     let path = "contract-method/execute";
     dotenv().expect("failed to read .env file");
 
@@ -184,7 +185,7 @@ pub async fn deploy_contract(
     full_node_uri: &str,
     contract_name: &str,
     arguments: Vec<&str>,
-) -> Result<ContractDeploy, Box<dyn Error>> {
+) -> Result<ContractDeploy> {
     let path = "contract/deploy";
     dotenv().expect("failed to read .env file");
 
@@ -208,7 +209,7 @@ pub async fn deploy_contract_with_code_hash(
     contract_name: &str,
     arguments: Vec<&str>,
     salt: &str,
-) -> Result<ContractDeploy, Box<dyn Error>> {
+) -> Result<ContractDeploy> {
     let path = "contract-from-code-hash/deploy";
     dotenv().expect("failed to read .env file");
 
