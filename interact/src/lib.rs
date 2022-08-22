@@ -81,9 +81,7 @@ pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block> {
         "fullNodeUri": full_node_uri,
         "height": height,
     });
-
     let result = get_response(path, data).await?;
-
     let block: Block = serde_json::from_value(result["data"].clone())?;
 
     Ok(block)
@@ -96,9 +94,7 @@ pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account> {
         "fullNodeUri": full_node_uri,
         "addr": addr,
     });
-
     let result = get_response(path, data).await?;
-
     let account: Account = serde_json::from_value(result["data"].clone())?;
 
     Ok(account)
@@ -113,7 +109,6 @@ pub async fn transfer_native_token(
 ) -> Result<String> {
     let path = "native-token/transfer";
     dotenv().expect("failed to read .env file");
-
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
@@ -121,7 +116,6 @@ pub async fn transfer_native_token(
         "amount": amount,
         "planckToOneNT": planck_to_one,
     });
-
     let result: Value = get_response(path, data).await?;
 
     Ok(result["data"]["txHash"].to_string())
@@ -141,9 +135,7 @@ pub async fn query_contract_state(
         "contractName": contract_name,
         "field": field,
     });
-
     let result = get_response(path, data).await?;
-
     let contract_tx: ContractQuery = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
@@ -159,7 +151,6 @@ pub async fn execute_contract_method(
 ) -> Result<ContractTx> {
     let path = "contract-method/execute";
     dotenv().expect("failed to read .env file");
-
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
@@ -168,9 +159,7 @@ pub async fn execute_contract_method(
         "methodName": method_name,
         "arguments": arguments,
     });
-
     let result: Value = get_response(path, data).await?;
-
     let contract_tx: ContractTx = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
@@ -185,16 +174,13 @@ pub async fn deploy_contract(
 ) -> Result<ContractDeploy> {
     let path = "contract/deploy";
     dotenv().expect("failed to read .env file");
-
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
         "contractName": contract_name,
         "arguments": arguments,
     });
-
     let result = get_response(path, data).await?;
-
     let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
@@ -209,7 +195,6 @@ pub async fn deploy_contract_with_code_hash(
 ) -> Result<ContractDeploy> {
     let path = "contract-from-code-hash/deploy";
     dotenv().expect("failed to read .env file");
-
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": std::env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
@@ -217,9 +202,7 @@ pub async fn deploy_contract_with_code_hash(
         "arguments": arguments,
         "salt": salt,
     });
-
     let result = get_response(path, data).await?;
-
     let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
