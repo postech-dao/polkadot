@@ -32,12 +32,10 @@ impl Config {
 #[tokio::test]
 async fn check_connection() {
     let config = Config::read_from_env();
-
     let height = get_current_height(&config.test_shibuya_node_url)
         .await
         .unwrap()
         .unwrap();
-
     let block = get_block(&config.test_shibuya_node_url, height)
         .await
         .unwrap();
@@ -49,12 +47,10 @@ async fn check_connection() {
 #[tokio::test]
 async fn check_block_number() {
     let config = Config::read_from_env();
-
     let first_block = get_current_height(&config.test_shibuya_node_url)
         .await
         .unwrap()
         .unwrap();
-
     let second_block = get_current_height(&config.test_shibuya_node_url)
         .await
         .unwrap()
@@ -67,11 +63,9 @@ async fn check_block_number() {
 #[tokio::test]
 async fn check_account() {
     let config = Config::read_from_env();
-
     let account = query_account(&config.test_shibuya_node_url, &config.account_public)
         .await
         .unwrap();
-
     let account_balance = account.native_token.parse::<u64>().unwrap();
 
     assert!(account_balance > 1_000_000_000);
@@ -81,11 +75,8 @@ async fn check_account() {
 #[tokio::test]
 async fn transfer_token() {
     let config = Config::read_from_env();
-
     let amount_to_transfer = 123_456_789;
-
     let planck_to_one = config.planck_to_one;
-
     let result = transfer_native_token(
         &config.test_shibuya_node_url,
         &config.account_public,
@@ -102,11 +93,8 @@ async fn transfer_token() {
 #[tokio::test]
 async fn check_contract_state() {
     let config = Config::read_from_env();
-
     let contract_name = "simple_counter";
-
     let field = "auth"; // get_count
-
     let result = query_contract_state(
         &config.test_shibuya_node_url,
         &config.contract_address,
@@ -126,17 +114,10 @@ async fn check_contract_state() {
 #[tokio::test]
 async fn execute_contract() {
     let config = Config::read_from_env();
-
     let mut argument = Vec::new();
-
-    //argument.push("3");
-
     argument.push(config.account_public.as_str());
-
     let contract_name = "simple_counter";
-
     let method_name = "remove_auth";
-
     let result = execute_contract_method(
         &config.test_shibuya_node_url,
         &config.contract_address,
@@ -154,13 +135,9 @@ async fn execute_contract() {
 #[tokio::test]
 async fn deploy_contract_with_name() {
     let config = Config::read_from_env();
-
     let mut argument = Vec::new();
-
     argument.push("5");
-
     let contract_name = "simple_counter";
-
     let result = deploy_contract(&config.test_shibuya_node_url, contract_name, argument)
         .await
         .unwrap();
@@ -174,15 +151,10 @@ async fn deploy_contract_with_name() {
 #[tokio::test]
 async fn deploy_contract_with_hash() {
     let config = Config::read_from_env();
-
     let mut argument = Vec::new();
-
     argument.push("5");
-
     let contract_name = "simple_counter";
-
     let salt = ""; // Empty string for Null in ts.
-
     let result = deploy_contract_with_code_hash(
         &config.test_shibuya_node_url,
         contract_name,
