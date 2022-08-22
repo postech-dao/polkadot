@@ -36,11 +36,11 @@ async fn check_connection() {
         .await
         .unwrap()
         .unwrap();
-    let block = get_block(&config.test_shibuya_node_url, height)
+    let _block = get_block(&config.test_shibuya_node_url, height)
         .await
         .unwrap();
 
-    println!("{:?}", block);
+    // println!("{:?}", block);
 }
 
 /// Return block height of the latest finalized block.
@@ -114,10 +114,10 @@ async fn check_contract_state() {
 #[tokio::test]
 async fn execute_contract() {
     let config = Config::read_from_env();
-    let mut argument = Vec::new();
-    argument.push(config.account_public.as_str());
+    // No argument in fn increment().
+    let argument = Vec::new();
     let contract_name = "simple_counter";
-    let method_name = "remove_auth";
+    let method_name = "increment";
     let result = execute_contract_method(
         &config.test_shibuya_node_url,
         &config.contract_address,
@@ -128,7 +128,9 @@ async fn execute_contract() {
     .await
     .unwrap();
 
-    println!("{:?}", result);
+    assert_eq!(result.contract_name, contract_name);
+    assert_eq!(result.message_name, method_name);
+    assert_eq!(result.message_type, "tx");
 }
 
 /// Deploy contract from the contract name.
@@ -142,7 +144,7 @@ async fn deploy_contract_with_name() {
         .await
         .unwrap();
 
-    println!("{:?}", result);
+    assert_eq!(result.contract_name, contract_name);
 }
 
 /// Deploy contract from the contract hash.
@@ -164,5 +166,5 @@ async fn deploy_contract_with_hash() {
     .await
     .unwrap();
 
-    println!("{:?}", result);
+    assert_eq!(result.contract_name, contract_name);
 }
