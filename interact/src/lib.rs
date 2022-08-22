@@ -49,32 +49,29 @@ pub struct ContractDeploy {
 }
 
 /// Return JSON response from path and data.
-pub async fn get_response(path: &str, data: Value) -> Value {
+pub async fn get_response(path: &str, data: Value) -> Result<Value> {
     let client = reqwest::Client::new();
-
     let response = client
         .post(HTTP_SERVER.to_owned() + path)
         .json(&data)
         .send()
-        .await
-        .unwrap();
+        .await?;
 
-    match response.status() {
-        reqwest::StatusCode::OK => response.json().await.unwrap(),
+    Ok(match response.status() {
+        reqwest::StatusCode::OK => response.json().await?,
         other => panic!("fail to get reponse properly: {:?}", other),
-    }
+    })
 }
 
 /// Return the current block height.
-pub async fn get_current_height(full_node_uri: &str) -> Result<u64> {
+pub async fn get_current_height(full_node_uri: &str) -> Result<Option<u64>> {
     let path = "current-height";
     let data = json!({
         "fullNodeUri": full_node_uri,
     });
+    let result = get_response(path, data).await?;
 
-    let result = get_response(path, data).await;
-
-    Ok(result["data"]["height"].as_u64().unwrap())
+    Ok(result["data"]["height"].as_u64())
 }
 
 /// Return the current block hash and timestamp.
@@ -85,9 +82,9 @@ pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block> {
         "height": height,
     });
 
-    let result = get_response(path, data).await;
+    let result = get_response(path, data).await?;
 
-    let block: Block = serde_json::from_value(result["data"].clone()).unwrap();
+    let block: Block = serde_json::from_value(result["data"].clone())?;
 
     Ok(block)
 }
@@ -100,9 +97,9 @@ pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account> {
         "addr": addr,
     });
 
-    let result = get_response(path, data).await;
+    let result = get_response(path, data).await?;
 
-    let account: Account = serde_json::from_value(result["data"].clone()).unwrap();
+    let account: Account = serde_json::from_value(result["data"].clone())?;
 
     Ok(account)
 }
@@ -125,7 +122,7 @@ pub async fn transfer_native_token(
         "planckToOneNT": planck_to_one,
     });
 
-    let result: Value = get_response(path, data).await;
+    let result: Value = get_response(path, data).await?;
 
     Ok(result["data"]["txHash"].to_string())
 }
@@ -145,9 +142,9 @@ pub async fn query_contract_state(
         "field": field,
     });
 
-    let result = get_response(path, data).await;
+    let result = get_response(path, data).await?;
 
-    let contract_tx: ContractQuery = serde_json::from_value(result["data"].clone()).unwrap();
+    let contract_tx: ContractQuery = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
 }
@@ -172,9 +169,9 @@ pub async fn execute_contract_method(
         "arguments": arguments,
     });
 
-    let result: Value = get_response(path, data).await;
+    let result: Value = get_response(path, data).await?;
 
-    let contract_tx: ContractTx = serde_json::from_value(result["data"].clone()).unwrap();
+    let contract_tx: ContractTx = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
 }
@@ -196,9 +193,9 @@ pub async fn deploy_contract(
         "arguments": arguments,
     });
 
-    let result = get_response(path, data).await;
+    let result = get_response(path, data).await?;
 
-    let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone()).unwrap();
+    let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
 }
@@ -221,9 +218,9 @@ pub async fn deploy_contract_with_code_hash(
         "salt": salt,
     });
 
-    let result = get_response(path, data).await;
+    let result = get_response(path, data).await?;
 
-    let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone()).unwrap();
+    let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
 }

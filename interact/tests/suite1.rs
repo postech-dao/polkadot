@@ -35,6 +35,7 @@ async fn check_connection() {
 
     let height = get_current_height(&config.test_shibuya_node_url)
         .await
+        .unwrap()
         .unwrap();
 
     let block = get_block(&config.test_shibuya_node_url, height)
@@ -51,10 +52,12 @@ async fn check_block_number() {
 
     let first_block = get_current_height(&config.test_shibuya_node_url)
         .await
+        .unwrap()
         .unwrap();
 
     let second_block = get_current_height(&config.test_shibuya_node_url)
         .await
+        .unwrap()
         .unwrap();
 
     assert!(first_block < second_block);
