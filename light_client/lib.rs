@@ -7,21 +7,15 @@ use ink_lang as ink;
 #[ink::contract]
 mod client {
     use pdao_colony_contract_common::*;
-
+    use pdao_beacon_chain_common::*;
     use ink_env::call::FromAccountId;
     use ink_storage::traits::SpreadAllocate;
-    use ink_prelude::vec::Vec;
-
-    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
-    pub struct LightClientUpdateMessage2 {
-        pub header: Header,
-        pub proof: BlockFinalizationProof,
-    }
-    //#[derive(Copy, Clone)]
+    
     #[ink(storage)]
     pub struct Client {
         height: u64,
         last_header: Header,
+        chain_name : String,
     }
 
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -39,18 +33,18 @@ mod client {
             Self {
                 height: 0,
                 last_header: initial_header,
+                chain_name : String::from("Astar"),
             }
         }
 
 
         #[ink(message)]
-        pub fn update(&mut self, message: LightClientUpdateMessage2) -> Result<()> {
-            let header = message.header;
-            let proof = message.proof;
+        pub fn update_light_client(&mut self, header: light_client::Header, proof: light_client::BlockFinalizationProof) -> Result<()> {
 
             let mut state = LightClient{
                 height : self.height,
                 last_header : self.last_header.clone(),
+                chain_name : self.chain_name.clone(),
             };
 
             if false == LightClient::update(&mut state, header, proof) {
@@ -62,7 +56,7 @@ mod client {
         #[ink(message)]
         pub fn verify_commitment(
             &self,
-            _message: Vec<u8>,
+            _message: message::DeliverableMessage,
             block_height: u64,
             proof: MerkleProof,
         ) -> Result<()> {
@@ -70,6 +64,7 @@ mod client {
             let state = LightClient{
                 height : self.height,
                 last_header : self.last_header.clone(),
+                chain_name : self.chain_name.clone(),
             };
 
             if false == LightClient::verify_commitment(&state, _message, block_height, proof) {
