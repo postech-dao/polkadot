@@ -3,7 +3,7 @@ name: explorer-deploy-dev
 on:
   push:
     branches:
-      - "release-dev"
+      - "main"
 
 jobs:
   deploy:
