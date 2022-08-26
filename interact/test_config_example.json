@@ -1,4 +1,5 @@
 {
+    "test_http_server_url": "http://localhost:8080/",
     "test_local_node_url": "ws://127.0.0.1:9944",
     "test_rococo_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
     "test_shibuya_node_url": "wss://shibuya-rpc.dwellir.com:443",

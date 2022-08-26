@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    /// Local http server for testing.
+    test_http_server_url: String,
     /// Local node url for substrate-contract-node.
     test_local_node_url: String,
     /// Rococo testnet url.
@@ -32,13 +34,17 @@ impl Config {
 #[tokio::test]
 async fn check_connection() {
     let config = Config::read_from_env();
-    let height = get_current_height(&config.test_shibuya_node_url)
+    let height = get_current_height(&config.test_shibuya_node_url, &config.test_http_server_url)
         .await
         .unwrap()
         .unwrap();
-    let _block = get_block(&config.test_shibuya_node_url, height)
-        .await
-        .unwrap();
+    let _block = get_block(
+        &config.test_shibuya_node_url,
+        &config.test_http_server_url,
+        height,
+    )
+    .await
+    .unwrap();
 
     // println!("{:?}", block);
 }
@@ -47,14 +53,16 @@ async fn check_connection() {
 #[tokio::test]
 async fn check_block_number() {
     let config = Config::read_from_env();
-    let first_block = get_current_height(&config.test_shibuya_node_url)
-        .await
-        .unwrap()
-        .unwrap();
-    let second_block = get_current_height(&config.test_shibuya_node_url)
-        .await
-        .unwrap()
-        .unwrap();
+    let first_block =
+        get_current_height(&config.test_shibuya_node_url, &config.test_http_server_url)
+            .await
+            .unwrap()
+            .unwrap();
+    let second_block =
+        get_current_height(&config.test_shibuya_node_url, &config.test_http_server_url)
+            .await
+            .unwrap()
+            .unwrap();
 
     assert!(first_block < second_block);
 }
@@ -63,9 +71,13 @@ async fn check_block_number() {
 #[tokio::test]
 async fn check_account() {
     let config = Config::read_from_env();
-    let account = query_account(&config.test_shibuya_node_url, &config.account_public)
-        .await
-        .unwrap();
+    let account = query_account(
+        &config.test_shibuya_node_url,
+        &config.test_http_server_url,
+        &config.account_public,
+    )
+    .await
+    .unwrap();
     let account_balance = account.native_token.parse::<u64>().unwrap();
 
     assert!(account_balance > 1_000_000_000);
@@ -79,6 +91,7 @@ async fn transfer_token() {
     let planck_to_one = config.planck_to_one;
     let result = transfer_native_token(
         &config.test_shibuya_node_url,
+        &config.test_http_server_url,
         &config.account_public,
         amount_to_transfer,
         planck_to_one,
@@ -97,6 +110,7 @@ async fn check_contract_state() {
     let field = "auth"; // get_count
     let result = query_contract_state(
         &config.test_shibuya_node_url,
+        &config.test_http_server_url,
         &config.contract_address,
         contract_name,
         field,
@@ -120,6 +134,7 @@ async fn execute_contract() {
     let method_name = "increment";
     let result = execute_contract_method(
         &config.test_shibuya_node_url,
+        &config.test_http_server_url,
         &config.contract_address,
         contract_name,
         method_name,
@@ -140,9 +155,14 @@ async fn deploy_contract_with_name() {
     let mut argument = Vec::new();
     argument.push("5");
     let contract_name = "simple_counter";
-    let result = deploy_contract(&config.test_shibuya_node_url, contract_name, argument)
-        .await
-        .unwrap();
+    let result = deploy_contract(
+        &config.test_shibuya_node_url,
+        &config.test_http_server_url,
+        contract_name,
+        argument,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(result.contract_name, contract_name);
 }
@@ -159,6 +179,7 @@ async fn deploy_contract_with_hash() {
     let salt = ""; // Empty string for Null in ts.
     let result = deploy_contract_with_code_hash(
         &config.test_shibuya_node_url,
+        &config.test_http_server_url,
         contract_name,
         argument,
         salt,
