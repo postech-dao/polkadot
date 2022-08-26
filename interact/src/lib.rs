@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{env, fmt::Debug};
 
-const HTTP_SERVER: &str = "http://localhost:8080/";
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct Block {
@@ -49,10 +47,10 @@ pub struct ContractDeploy {
 }
 
 /// Return JSON response from path and data.
-pub async fn get_response(path: &str, data: Value) -> Result<Value> {
+pub async fn get_response(http_server: &str, path: &str, data: Value) -> Result<Value> {
     let client = reqwest::Client::new();
     let response = client
-        .post(HTTP_SERVER.to_owned() + path)
+        .post(http_server.to_owned() + path)
         .json(&data)
         .send()
         .await?;
@@ -64,37 +62,37 @@ pub async fn get_response(path: &str, data: Value) -> Result<Value> {
 }
 
 /// Return the current block height.
-pub async fn get_current_height(full_node_uri: &str) -> Result<Option<u64>> {
+pub async fn get_current_height(full_node_uri: &str, http_server: &str) -> Result<Option<u64>> {
     let path = "current-height";
     let data = json!({
         "fullNodeUri": full_node_uri,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
 
     Ok(result["data"]["height"].as_u64())
 }
 
 /// Return the current block hash and timestamp.
-pub async fn get_block(full_node_uri: &str, height: u64) -> Result<Block> {
+pub async fn get_block(full_node_uri: &str, http_server: &str, height: u64) -> Result<Block> {
     let path = "block-info";
     let data = json!({
         "fullNodeUri": full_node_uri,
         "height": height,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
     let block: Block = serde_json::from_value(result["data"].clone())?;
 
     Ok(block)
 }
 
 /// Return the native token, meme token(TBD), nft(TBD) balance of the given account.
-pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account> {
+pub async fn query_account(full_node_uri: &str, http_server: &str, addr: &str) -> Result<Account> {
     let path = "account-info";
     let data = json!({
         "fullNodeUri": full_node_uri,
         "addr": addr,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
     let account: Account = serde_json::from_value(result["data"].clone())?;
 
     Ok(account)
@@ -103,6 +101,7 @@ pub async fn query_account(full_node_uri: &str, addr: &str) -> Result<Account> {
 /// Transfer the native token to receiver account.
 pub async fn transfer_native_token(
     full_node_uri: &str,
+    http_server: &str,
     receiver_public_key: &str,
     amount: u64,
     planck_to_one: u8,
@@ -116,7 +115,7 @@ pub async fn transfer_native_token(
         "amount": amount,
         "planckToOneNT": planck_to_one,
     });
-    let result: Value = get_response(path, data).await?;
+    let result: Value = get_response(http_server, path, data).await?;
 
     Ok(result["data"]["txHash"].to_string())
 }
@@ -124,6 +123,7 @@ pub async fn transfer_native_token(
 /// Query the state of the deployed contract.
 pub async fn query_contract_state(
     full_node_uri: &str,
+    http_server: &str,
     contract_addr: &str,
     contract_name: &str,
     field: &str,
@@ -135,7 +135,7 @@ pub async fn query_contract_state(
         "contractName": contract_name,
         "field": field,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
     let contract_tx: ContractQuery = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
@@ -144,6 +144,7 @@ pub async fn query_contract_state(
 /// Execute the method(Send a transaction) of the deployed contract.
 pub async fn execute_contract_method(
     full_node_uri: &str,
+    http_server: &str,
     contract_addr: &str,
     contract_name: &str,
     method_name: &str,
@@ -159,7 +160,7 @@ pub async fn execute_contract_method(
         "methodName": method_name,
         "arguments": arguments,
     });
-    let result: Value = get_response(path, data).await?;
+    let result: Value = get_response(http_server, path, data).await?;
     let contract_tx: ContractTx = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_tx)
@@ -169,6 +170,7 @@ pub async fn execute_contract_method(
 /// e.g. simple_counter, light_client, treasury.
 pub async fn deploy_contract(
     full_node_uri: &str,
+    http_server: &str,
     contract_name: &str,
     arguments: Vec<&str>,
 ) -> Result<ContractDeploy> {
@@ -180,7 +182,7 @@ pub async fn deploy_contract(
         "contractName": contract_name,
         "arguments": arguments,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
     let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
@@ -189,6 +191,7 @@ pub async fn deploy_contract(
 /// Deploy the contract with code hash.
 pub async fn deploy_contract_with_code_hash(
     full_node_uri: &str,
+    http_server: &str,
     contract_name: &str,
     arguments: Vec<&str>,
     salt: &str,
@@ -202,7 +205,7 @@ pub async fn deploy_contract_with_code_hash(
         "arguments": arguments,
         "salt": salt,
     });
-    let result = get_response(path, data).await?;
+    let result = get_response(http_server, path, data).await?;
     let contract_deploy: ContractDeploy = serde_json::from_value(result["data"].clone())?;
 
     Ok(contract_deploy)
