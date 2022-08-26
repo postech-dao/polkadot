@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use pdao_beacon_chain_common::message as polkadot_message;
+use pdao_beacon_chain_common::message as pbc_message;
 use pdao_colony_common::*;
 use pdao_colony_contract_common::*;
 use rust_decimal::prelude::*;
@@ -76,7 +76,7 @@ impl ColonyChain for Astar {
 
     async fn transfer_treasury_fungible_token(
         &self,
-        _message: polkadot_message::FungibleTokenTransfer,
+        _message: pbc_message::FungibleTokenTransfer,
         _block_height: u64,
         _proof: MerkleProof,
     ) -> Result<(), Error> {
@@ -85,7 +85,7 @@ impl ColonyChain for Astar {
 
     async fn transfer_treasury_non_fungible_token(
         &self,
-        _message: polkadot_message::NonFungibleTokenTransfer,
+        _message: pbc_message::NonFungibleTokenTransfer,
         _block_height: u64,
         _proof: MerkleProof,
     ) -> Result<(), Error> {
@@ -95,7 +95,7 @@ impl ColonyChain for Astar {
     async fn deliver_custom_order(
         &self,
         _contract_name: &str,
-        _message: polkadot_message::Custom,
+        _message: pbc_message::Custom,
         _block_height: u64,
         _proof: MerkleProof,
     ) -> Result<(), Error> {
