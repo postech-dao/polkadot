@@ -5,6 +5,14 @@ use serde_json::{json, Value};
 use std::{env, fmt::Debug};
 
 #[derive(Serialize, Deserialize, Debug)]
+pub enum Contract {
+    SimpleCounter,
+    Treasury,
+    LightClient,
+    Others,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct Block {
     pub block_hash: String,
@@ -124,14 +132,20 @@ pub async fn query_contract_state(
     full_node_uri: &str,
     http_server: &str,
     contract_addr: &str,
-    contract_name: &str,
+    contract_name: Contract,
     field: &str,
 ) -> Result<ContractQuery> {
     let path = "contract-state";
+    let contract = match contract_name {
+        Contract::SimpleCounter => "simple_counter",
+        Contract::Treasury => "treasury",
+        Contract::LightClient => "light_client",
+        Contract::Others => "others",
+    };
     let data = json!({
         "fullNodeUri": full_node_uri,
         "contractAddr": contract_addr,
-        "contractName": contract_name,
+        "contractName": contract,
         "field": field,
     });
     let result = get_response(http_server, path, data).await?;
@@ -145,17 +159,23 @@ pub async fn execute_contract_method(
     full_node_uri: &str,
     http_server: &str,
     contract_addr: &str,
-    contract_name: &str,
+    contract_name: Contract,
     method_name: &str,
     arguments: Vec<&str>,
 ) -> Result<ContractTx> {
     let path = "contract-method/execute";
     dotenv().expect("failed to read .env file");
+    let contract = match contract_name {
+        Contract::SimpleCounter => "simple_counter",
+        Contract::Treasury => "treasury",
+        Contract::LightClient => "light_client",
+        Contract::Others => "others",
+    };
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
         "contractAddr": contract_addr,
-        "contractName": contract_name,
+        "contractName": contract,
         "methodName": method_name,
         "arguments": arguments,
     });
@@ -170,15 +190,21 @@ pub async fn execute_contract_method(
 pub async fn deploy_contract(
     full_node_uri: &str,
     http_server: &str,
-    contract_name: &str,
+    contract_name: Contract,
     arguments: Vec<&str>,
 ) -> Result<ContractDeploy> {
     let path = "contract/deploy";
     dotenv().expect("failed to read .env file");
+    let contract = match contract_name {
+        Contract::SimpleCounter => "simple_counter",
+        Contract::Treasury => "treasury",
+        Contract::LightClient => "light_client",
+        Contract::Others => "others",
+    };
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
-        "contractName": contract_name,
+        "contractName": contract,
         "arguments": arguments,
     });
     let result = get_response(http_server, path, data).await?;
@@ -191,16 +217,22 @@ pub async fn deploy_contract(
 pub async fn deploy_contract_with_code_hash(
     full_node_uri: &str,
     http_server: &str,
-    contract_name: &str,
+    contract_name: Contract,
     arguments: Vec<&str>,
     salt: &str,
 ) -> Result<ContractDeploy> {
     let path = "contract-from-code-hash/deploy";
     dotenv().expect("failed to read .env file");
+    let contract = match contract_name {
+        Contract::SimpleCounter => "simple_counter",
+        Contract::Treasury => "treasury",
+        Contract::LightClient => "light_client",
+        Contract::Others => "others",
+    };
     let data = json!({
         "fullNodeUri": full_node_uri,
         "mnemonic": std::env::var("SIGNER_MNEMONIC").expect("fail to load signer mnemonic").as_str(),
-        "contractName": contract_name,
+        "contractName": contract,
         "arguments": arguments,
         "salt": salt,
     });

@@ -106,13 +106,12 @@ async fn transfer_token() {
 #[tokio::test]
 async fn check_contract_state() {
     let config = Config::read_from_env();
-    let contract_name = "simple_counter";
     let field = "auth"; // get_count
     let result = query_contract_state(
         &config.test_shibuya_node_url,
         &config.test_http_server_url,
         &config.contract_address,
-        contract_name,
+        Contract::SimpleCounter,
         field,
     )
     .await
@@ -130,20 +129,18 @@ async fn execute_contract() {
     let config = Config::read_from_env();
     // No argument in fn increment().
     let argument = Vec::new();
-    let contract_name = "simple_counter";
     let method_name = "increment";
     let result = execute_contract_method(
         &config.test_shibuya_node_url,
         &config.test_http_server_url,
         &config.contract_address,
-        contract_name,
+        Contract::SimpleCounter,
         method_name,
         argument,
     )
     .await
     .unwrap();
 
-    assert_eq!(result.contract_name, contract_name);
     assert_eq!(result.message_name, method_name);
     assert_eq!(result.message_type, "tx");
 }
@@ -154,17 +151,14 @@ async fn deploy_contract_with_name() {
     let config = Config::read_from_env();
     let mut argument = Vec::new();
     argument.push("5");
-    let contract_name = "simple_counter";
-    let result = deploy_contract(
+    let _result = deploy_contract(
         &config.test_shibuya_node_url,
         &config.test_http_server_url,
-        contract_name,
+        Contract::SimpleCounter,
         argument,
     )
     .await
     .unwrap();
-
-    assert_eq!(result.contract_name, contract_name);
 }
 
 /// Deploy contract from the contract hash.
@@ -175,17 +169,14 @@ async fn deploy_contract_with_hash() {
     let config = Config::read_from_env();
     let mut argument = Vec::new();
     argument.push("5");
-    let contract_name = "simple_counter";
     let salt = ""; // Empty string for Null in ts.
-    let result = deploy_contract_with_code_hash(
+    let _result = deploy_contract_with_code_hash(
         &config.test_shibuya_node_url,
         &config.test_http_server_url,
-        contract_name,
+        Contract::SimpleCounter,
         argument,
         salt,
     )
     .await
     .unwrap();
-
-    assert_eq!(result.contract_name, contract_name);
 }
