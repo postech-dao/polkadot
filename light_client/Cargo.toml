@@ -16,8 +16,9 @@ ink_lang = { version = "3", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-pdao-colony-contract-common = { path="../contract-common" }
-pdao-beacon-chain-common = { path="../common" }
+pdao-colony-contract-common = { version = "0.1.0" }
+
+pdao-beacon-chain-common = { version = "0.1.0" }
 
 [lib]
 name = "client"
