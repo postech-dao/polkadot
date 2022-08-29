@@ -1,4 +1,3 @@
-extern crate dotenv;
 use anyhow::Result;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
