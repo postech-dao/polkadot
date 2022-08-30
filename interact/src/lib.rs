@@ -9,7 +9,6 @@ pub enum Contract {
     SimpleCounter,
     Treasury,
     LightClient,
-    Others,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -140,7 +139,6 @@ pub async fn query_contract_state(
         Contract::SimpleCounter => "simple_counter",
         Contract::Treasury => "treasury",
         Contract::LightClient => "light_client",
-        Contract::Others => "others",
     };
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -169,7 +167,6 @@ pub async fn execute_contract_method(
         Contract::SimpleCounter => "simple_counter",
         Contract::Treasury => "treasury",
         Contract::LightClient => "light_client",
-        Contract::Others => "others",
     };
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -199,7 +196,6 @@ pub async fn deploy_contract(
         Contract::SimpleCounter => "simple_counter",
         Contract::Treasury => "treasury",
         Contract::LightClient => "light_client",
-        Contract::Others => "others",
     };
     let data = json!({
         "fullNodeUri": full_node_uri,
@@ -227,7 +223,6 @@ pub async fn deploy_contract_with_code_hash(
         Contract::SimpleCounter => "simple_counter",
         Contract::Treasury => "treasury",
         Contract::LightClient => "light_client",
-        Contract::Others => "others",
     };
     let data = json!({
         "fullNodeUri": full_node_uri,
