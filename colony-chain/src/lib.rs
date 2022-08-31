@@ -1,8 +1,5 @@
 use async_trait::async_trait;
-<<<<<<< HEAD
 use pdao_beacon_chain_common::message as pbc_message;
-=======
->>>>>>> dd91e83 (fix: use publised version of pbc)
 use pdao_colony_common::*;
 use pdao_colony_contract_common::*;
 use rust_decimal::prelude::*;
