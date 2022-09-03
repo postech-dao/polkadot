@@ -338,7 +338,7 @@ Deno.test({
   async fn() {
     // init with deploy
     const INIT_COUNT = 100;
-    const salt = "aaaaaaaa"; // change this for every test
+    const salt = Math.random().toString(36).substring(2,11); // change this for every test
     const { contractAddr, txHash: deployTxHash } = await deployWithCodeHash(
       RPC_ENDPOINT.SHIBUYA,
       TESTNET_MNEMONIC.SHIBUYA,
