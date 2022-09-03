@@ -77,7 +77,7 @@ Deno.test({
   async fn() {
     // Many transactions between queries can make it fail
     const SIMPLE_COUNTER_ADDR =
-      "WCWvA3FHs39ao6mMWNxkH687pBJH6Di1Kj49Vxj6WvyXRVW";
+      "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
     const INPUT = 5;
     const prevCount = await query(
       RPC_ENDPOINT.SHIBUYA,
