@@ -1,9 +1,9 @@
 {
-    "test_http_server_url": "http://localhost:8080/",
-    "test_local_node_url": "ws://127.0.0.1:9944",
-    "test_rococo_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
-    "test_shibuya_node_url": "wss://shibuya-rpc.dwellir.com:443",
-    "contract_address": "aeQtHkL7ENgfVYwiMZNYgz2GeRa75B2cSaVz1AFjZ9omRtv",
-    "account_public": "Wb3hWZDmozU9vUgM5b64q7AECoQgTLigFSKLz4jU9pYTonV",
-    "planck_to_one": 18
+  "test_http_server_url": "http://localhost:8080/",
+  "test_local_node_url": "ws://127.0.0.1:9944",
+  "test_rococo_node_url": "wss://rococo-contracts-rpc.polkadot.io:443",
+  "test_shibuya_node_url": "wss://shibuya-rpc.dwellir.com:443",
+  "contract_address": "aeQtHkL7ENgfVYwiMZNYgz2GeRa75B2cSaVz1AFjZ9omRtv",
+  "account_public": "Wb3hWZDmozU9vUgM5b64q7AECoQgTLigFSKLz4jU9pYTonV",
+  "planck_to_one": 18
 }

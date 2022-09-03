@@ -9,10 +9,6 @@ import {
   ContractPromise,
 } from "https://deno.land/x/polkadot@0.0.9/api-contract/mod.ts";
 import fs from "https://deno.land/std@0.115.1/node/fs/promises.ts";
-import {
-  assert,
-  assertThrows,
-} from "https://deno.land/std@0.149.0/testing/asserts.ts";
 import { KeyringPair } from "https://deno.land/x/polkadot@0.0.9/keyring/types.ts";
 import { SubmittableExtrinsic } from "https://deno.land/x/polkadot@0.0.9/api/submittable/types.ts";
 import { CodeSubmittableResult } from "https://deno.land/x/polkadot@0.0.9/api-contract/base/Code.ts";
@@ -26,12 +22,11 @@ import {
   LIGHT_CLIENT_QUERY,
   LIGHT_CLIENT_TX_METHOD,
   SIMPLE_COUNTER_QUERY,
-  SIMPLE_COUNTER_TX,
   SIMPLE_COUNTER_TX_METHOD,
   TREASURY_QUERY,
   TREASURY_TX_METHOD,
 } from "./contract.ts";
-import { RPC_ENDPOINT, SS58_FORMAT, TESTNET_MNEMONIC } from "./enum.ts";
+import { SS58_FORMAT } from "./enum.ts";
 
 const toCamelCase = (str: string): string => {
   return str.toLowerCase().replace(
@@ -70,39 +65,7 @@ export const getPairFromSeedWithSS58 = (
   return pair;
 };
 
-// test: keypair
-Deno.test({
-  name: "keypair test",
-  fn() {
-    const keyring = new Keyring({ type: "sr25519" });
-    const shibuyaPair: KeyringPair = keyring.addFromUri(
-      TESTNET_MNEMONIC.SHIBUYA,
-    );
-    keyring.setSS58Format(SS58_FORMAT.SHIBUYA);
-    assert(
-      shibuyaPair.address === "YtyhRxkUA5gAPsFXQzQKdexK4GUCaiDqk8RrQtU4FiwNYHY",
-    );
-    keyring.setSS58Format(SS58_FORMAT.DEFAULT);
-    assert(
-      shibuyaPair.address ===
-        getPairFromSeedWithSS58(TESTNET_MNEMONIC.SHIBUYA, SS58_FORMAT.DEFAULT)
-          .address,
-    );
-    const rococoPair = getPairFromSeed(TESTNET_MNEMONIC.ROCOCO);
-    assert(
-      rococoPair.address === "5CiTGDb8zaMMw6Sqrn8y3Awt9A6HiEdyf3wB7GrsbnpasVss",
-    );
-    assert(
-      rococoPair.address ===
-        getPairFromSeedWithSS58(TESTNET_MNEMONIC.ROCOCO, SS58_FORMAT.DEFAULT)
-          .address,
-    );
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-const getFreeBalance = async (
+export const getFreeBalance = async (
   fullNodeUri: string,
   address: string,
 ): Promise<bigint> => {
@@ -141,30 +104,6 @@ export const getTotalBalance = async (
   ); // 1 ROC = 1,000,000,000,000,000, 1 SBY = 1,000,000,000,000,000,000
   return freeBalance + reservedBalance;
 };
-
-// test: balance
-// check floating point error
-Deno.test({
-  name: "balance test",
-  async fn() {
-    const pair: KeyringPair = getPairFromSeed(TESTNET_MNEMONIC.SHIBUYA);
-    const free = await getFreeBalance(
-      RPC_ENDPOINT.SHIBUYA,
-      pair.address,
-    );
-    const reserved = await getReservedBalance(
-      RPC_ENDPOINT.SHIBUYA,
-      pair.address,
-    );
-    const total = await getTotalBalance(
-      RPC_ENDPOINT.SHIBUYA,
-      pair.address,
-    );
-    assert(free + reserved === total);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
 
 export const getAbiFromContractName = async (name: string): Promise<string> => {
   let path: ABI_PATH_OPTIONS;
@@ -288,207 +227,6 @@ export const sendContractTx = async (
   });
 };
 
-// contract test: simple_counter; execute method
-Deno.test({
-  name: "simple_counter query and tx test: execute",
-  async fn() {
-    // Many transactions between queries can make it fail
-    const SIMPLE_COUNTER_ADDR =
-      "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
-    const INPUT = 5;
-    const prevCount = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    const txHash = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "execute",
-      [INPUT],
-    );
-    console.log("txHash: ", txHash);
-    const subsequentCount = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    if (subsequentCount && prevCount) {
-      assert(
-        parseInt(subsequentCount?.toString()) -
-            parseInt(prevCount?.toString()) === INPUT,
-      );
-    }
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-// contract test: simple_counter; increment & decrement method
-Deno.test({
-  name: "simple_counter query and tx test: increment & decrement",
-  async fn() {
-    const SIMPLE_COUNTER_ADDR =
-      "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
-    // increment
-    const prevCount = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    const txHash = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "increment",
-      [],
-    );
-    console.log("txHash: ", txHash);
-    const countAfterInc = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    // assert(parseInt(countAfterInc) - parseInt(prevCount) === 1);
-
-    //decrement
-    const txHash2 = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "decrement",
-      [],
-    );
-    console.log("txHash2: ", txHash2);
-    const countAfterDec = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    if (countAfterInc && prevCount) {
-      assert(
-        parseInt(countAfterInc?.toString()) -
-            parseInt(prevCount?.toString()) === 1,
-      );
-    }
-    if (countAfterDec && prevCount) {
-      assert(
-        parseInt(countAfterDec?.toString()) === parseInt(prevCount?.toString()),
-      );
-    }
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-// contract test: simple_counter; reset
-Deno.test({
-  name: "simple_counter query and tx test: reset",
-  async fn() {
-    const SIMPLE_COUNTER_ADDR =
-      "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
-    const txHash = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "increment",
-      [],
-    );
-    console.log("txHash: ", txHash);
-    const txHash2 = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "reset",
-      [],
-    );
-    console.log("txHash2: ", txHash2);
-    const countAfterReset = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "count",
-    );
-    if (countAfterReset) assert(parseInt(countAfterReset.toString()) === 0);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-// contract test: simple_counter; addAuth and removeAuth
-Deno.test({
-  name: "simple_counter query and tx test: addAuth and removeAuth",
-  async fn() {
-    const SIMPLE_COUNTER_ADDR =
-      "Xt1CVcr4nTd3oKrPk85xJWLTCMwGZa6KyxGo2kTGf2NjzLf";
-    const AUTH_ADDR = "YtUkPWDB1thp87L9UeYUwx9nWNYv9JtvFihRzUWrnZ3j7zm";
-    const prevList = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "auth",
-    );
-    const prevAuthList = prevList?.toString().split(",");
-    const txHash = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "add_auth",
-      [AUTH_ADDR],
-    );
-    console.log("txHash", txHash);
-    const listAfterAdd = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "auth",
-    );
-    const authListAfterAdd = listAfterAdd?.toString().split(",");
-    const txHash2 = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "remove_auth",
-      [AUTH_ADDR],
-    );
-    console.log("txHash2", txHash2);
-    const listAfterRemove = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      SIMPLE_COUNTER_ADDR,
-      "auth",
-    );
-    const authListAfterRemove = listAfterRemove?.toString().split(",");
-    console.log("prev: ", prevAuthList);
-    console.log("after add: ", authListAfterAdd);
-    console.log("after remove: ", authListAfterRemove);
-    if (authListAfterAdd && prevAuthList) {
-      assert(authListAfterAdd?.length - prevAuthList?.length === 1);
-    }
-    if (authListAfterAdd && authListAfterRemove) {
-      assert(authListAfterAdd?.length - authListAfterRemove?.length === 1);
-    }
-    authListAfterAdd && prevAuthList
-      ? assert(authListAfterAdd[prevAuthList.length] === AUTH_ADDR)
-      : assert(false, "addAuth does not occur");
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
 export type contractDeploymentResult = {
   contractAddr: string;
   txHash: string;
@@ -588,138 +326,6 @@ export const deployWithCodeHash = async (
   });
 };
 
-// deployment test
-Deno.test({
-  name: "deployment test: deploy simple_counter; init",
-  async fn() {
-    // init with deploy
-    const INIT_COUNT = 100;
-    const { contractAddr, txHash: deployTxHash } = await deployWithContractName(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      [INIT_COUNT],
-    );
-    console.log("contract address: ", contractAddr);
-    console.log("deployment tx hash: ", deployTxHash);
-    const countResult: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "count",
-    );
-    let count: number | null = null;
-    if (countResult?.toString()) count = parseInt(countResult.toString());
-    assert(count === INIT_COUNT);
-
-    // execute init method after deploy
-    const INIT_COUNT_2 = 500;
-    const FIRST_AUTH_ADDR =
-      getPairFromSeedWithSS58(TESTNET_MNEMONIC.SHIBUYA, SS58_FORMAT.SHIBUYA)
-        .address;
-    const contractTxHash: string = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      SIMPLE_COUNTER_TX.INIT,
-      [INIT_COUNT_2, FIRST_AUTH_ADDR],
-    );
-    console.log("contract tx hash: ", contractTxHash);
-    const countResult2: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "count",
-    );
-    let count2: number | null = null;
-    if (countResult2?.toString()) count2 = parseInt(countResult2.toString());
-    assert(count2 === INIT_COUNT_2);
-
-    // check first auth
-    const authResult: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "auth",
-    );
-    let authList: string[] = [];
-    if (authResult?.toString()) {
-      authList = [...authResult.toString().split(",")];
-    }
-    assert(authList[0] === FIRST_AUTH_ADDR);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-// deployment test with code hash
-Deno.test({
-  name: "deployment test: deploy simple_counter with code hash; init",
-  async fn() {
-    // init with deploy
-    const INIT_COUNT = 100;
-    const salt = "aaaaaaaa"; // change this for every test
-    const { contractAddr, txHash: deployTxHash } = await deployWithCodeHash(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      salt,
-      [INIT_COUNT],
-    );
-    console.log("contract address: ", contractAddr);
-    console.log("deployment tx hash: ", deployTxHash);
-    const countResult: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "count",
-    );
-    let count: number | null = null;
-    if (countResult?.toString()) count = parseInt(countResult.toString());
-    assert(count === INIT_COUNT);
-
-    // execute init method after deploy
-    const INIT_COUNT_2 = 500;
-    const FIRST_AUTH_ADDR =
-      getPairFromSeedWithSS58(TESTNET_MNEMONIC.SHIBUYA, SS58_FORMAT.SHIBUYA)
-        .address;
-    const contractTxHash: string = await sendContractTx(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      SIMPLE_COUNTER_TX.INIT,
-      [INIT_COUNT_2, FIRST_AUTH_ADDR],
-    );
-    console.log("contract tx hash: ", contractTxHash);
-    const countResult2: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "count",
-    );
-    let count2: number | null = null;
-    if (countResult2?.toString()) count2 = parseInt(countResult2.toString());
-    assert(count2 === INIT_COUNT_2);
-
-    // check first auth
-    const authResult: AnyJson = await query(
-      RPC_ENDPOINT.SHIBUYA,
-      CONTRACT.SIMPLE_COUNTER,
-      contractAddr,
-      "auth",
-    );
-    let authList: string[] = [];
-    if (authResult?.toString()) {
-      authList = [...authResult.toString().split(",")];
-    }
-    assert(authList[0] === FIRST_AUTH_ADDR);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
 export type BlockInfo = {
   blockHash: string;
   timestamp: number;
@@ -750,25 +356,6 @@ export const getCurrentHeight = async (
   return parseInt(number.toString());
 };
 
-// block info test
-Deno.test({
-  name: "block info test: get block hash and timestamp from blocknumber",
-  async fn() {
-    const blockNumber = 2066556;
-    const { blockHash, timestamp } = await getBlockInfo(
-      RPC_ENDPOINT.SHIBUYA,
-      blockNumber,
-    );
-    assert(
-      blockHash ===
-        "0x842dadc2b3afec1fa95b97e41cd0271201248dca5f9cd891e124e5e15f619d44",
-    );
-    assert(timestamp === 1660894626045);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
 export const transferNativeToken = async (
   fullNodeUri: string,
   mnemonic: string,
@@ -782,37 +369,3 @@ export const transferNativeToken = async (
   const hash = await transfer.signAndSend(pair);
   return hash.toHex();
 };
-
-// token transfer test
-Deno.test({
-  name: "token transfer test: transfer native token in shibuya",
-  async fn() {
-    const AMOUNT = 100000000000000000n; // 0.1 SBY
-    const receiverAddr: string =
-      getPairFromSeedWithSS58(TESTNET_MNEMONIC.ROCOCO, SS58_FORMAT.SHIBUYA)
-        .address;
-    const prevBalance: bigint = await getTotalBalance(
-      RPC_ENDPOINT.SHIBUYA,
-      receiverAddr,
-    );
-    console.log(prevBalance);
-    const txHash: string = await transferNativeToken(
-      RPC_ENDPOINT.SHIBUYA,
-      TESTNET_MNEMONIC.SHIBUYA,
-      receiverAddr,
-      AMOUNT,
-    );
-    console.log("txHash: ", txHash);
-    let balanceAfterTransfer: bigint | null = null;
-    setTimeout(async () => {
-      balanceAfterTransfer = await getTotalBalance(
-        RPC_ENDPOINT.SHIBUYA,
-        receiverAddr,
-      );
-      console.log(balanceAfterTransfer);
-      assert(balanceAfterTransfer - prevBalance === AMOUNT);
-    }, 3000);
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});

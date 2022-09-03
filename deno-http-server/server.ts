@@ -245,4 +245,4 @@ router.post("/contract-from-code-hash/deploy", async (ctx) => {
 app.use(router.allowedMethods());
 app.use(router.routes());
 
-app.listen({ port }); 
+app.listen({ port });
