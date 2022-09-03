@@ -6,12 +6,12 @@ use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
-pub struct Astar {}
+pub struct Shiden {}
 
 #[async_trait]
-impl ColonyChain for Astar {
+impl ColonyChain for Shiden {
     async fn get_chain_name(&self) -> String {
-        "astar".to_owned()
+        "shiden".to_owned()
     }
 
     async fn get_last_block(&self) -> Result<Block, Error> {

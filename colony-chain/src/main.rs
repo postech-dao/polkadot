@@ -13,8 +13,8 @@ async fn main() {
     serde_tc::http::run_server(
         port,
         vec![(
-            "astar".to_owned(),
-            serde_tc::http::create_http_object(Arc::new(Astar {}) as Arc<dyn ColonyChain>),
+            "shiden".to_owned(),
+            serde_tc::http::create_http_object(Arc::new(Shiden {}) as Arc<dyn ColonyChain>),
         )]
         .into_iter()
         .collect(),
