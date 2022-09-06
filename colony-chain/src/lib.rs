@@ -10,6 +10,8 @@ use std::collections::HashMap;
 pub struct Shiden {
     pub full_node_uri: String,
     pub http_server_url: String,
+    pub treasury_address: String,
+    pub light_client_address: String,
 }
 
 #[async_trait]
@@ -43,12 +45,12 @@ impl ColonyChain for Shiden {
     async fn get_contract_list(&self) -> Result<Vec<ContractInfo>, Error> {
         Ok(vec![
             ContractInfo {
-                address: "0xabcd".to_owned(),
+                address: self.treasury_address.clone(),
                 contract_type: ContractType::LightClient,
                 sequence: 0,
             },
             ContractInfo {
-                address: "0x1234".to_owned(),
+                address: self.light_client_address.clone(),
                 contract_type: ContractType::Treasury,
                 sequence: 0,
             },
