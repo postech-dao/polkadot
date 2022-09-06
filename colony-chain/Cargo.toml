@@ -17,3 +17,4 @@ serde = {version = "1.0", features = ["derive"]}
 serde-tc = "0.3.3"
 serde_json = {version = "1.0"}
 tokio = {version = "1.0", features = ["full"]}
+pdao-polkadot-interact = {path = "../interact"}

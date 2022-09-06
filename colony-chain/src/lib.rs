@@ -2,38 +2,55 @@ use async_trait::async_trait;
 use pdao_beacon_chain_common::message as pbc_message;
 use pdao_colony_common::*;
 use pdao_colony_contract_common::*;
+use pdao_polkadot_interact::{self, get_block, get_current_height};
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
-pub struct Astar {}
+pub struct Shiden {
+    pub full_node_uri: String,
+    pub http_server_url: String,
+    pub treasury_address: String,
+    pub light_client_address: String,
+}
 
 #[async_trait]
-impl ColonyChain for Astar {
+impl ColonyChain for Shiden {
     async fn get_chain_name(&self) -> String {
-        "astar".to_owned()
+        "shiden".to_owned()
     }
 
     async fn get_last_block(&self) -> Result<Block, Error> {
-        Ok(Block {
-            height: 0,
-            timestamp: 0,
-        })
+        let height = get_current_height(&self.full_node_uri, &self.http_server_url)
+            .await
+            .unwrap()
+            .unwrap();
+        let timestamp = get_block(&self.full_node_uri, &self.http_server_url, height)
+            .await
+            .unwrap()
+            .timestamp;
+        Ok(Block { height, timestamp })
     }
 
     async fn check_connection(&self) -> Result<(), Error> {
-        Ok(())
+        let height = get_current_height(&self.full_node_uri, &self.http_server_url).await;
+        match height {
+            Ok(_height) => Ok(()),
+            Err(_error) => Err(Error::ConnectionError(
+                "Unable to get current height from full node".to_owned(),
+            )),
+        }
     }
 
     async fn get_contract_list(&self) -> Result<Vec<ContractInfo>, Error> {
         Ok(vec![
             ContractInfo {
-                address: "0xabcd".to_owned(),
+                address: self.treasury_address.clone(),
                 contract_type: ContractType::LightClient,
                 sequence: 0,
             },
             ContractInfo {
-                address: "0x1234".to_owned(),
+                address: self.light_client_address.clone(),
                 contract_type: ContractType::Treasury,
                 sequence: 0,
             },
