@@ -31,7 +31,13 @@ impl ColonyChain for Shiden {
     }
 
     async fn check_connection(&self) -> Result<(), Error> {
-        Ok(())
+        let height = get_current_height(&self.full_node_uri, &self.http_server_url).await;
+        match height {
+            Ok(_height) => Ok(()),
+            Err(_error) => Err(Error::ConnectionError(
+                "Unable to get current height from full node".to_owned(),
+            )),
+        }
     }
 
     async fn get_contract_list(&self) -> Result<Vec<ContractInfo>, Error> {

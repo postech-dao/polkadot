@@ -14,7 +14,7 @@ async fn main() {
         port,
         vec![(
             "shiden".to_owned(),
-            serde_tc::http::create_http_object(Arc::new(Shiden {}) as Arc<dyn ColonyChain>),
+            serde_tc::http::create_http_object(Arc::new(Shiden {full_node_uri: "".to_owned(), http_server_url: "".to_owned()}) as Arc<dyn ColonyChain>),
         )]
         .into_iter()
         .collect(),
