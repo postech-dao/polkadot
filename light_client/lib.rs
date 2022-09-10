@@ -56,7 +56,7 @@ mod client {
 
             Ok(())
         }
-        
+
         //invoked by treasury contract, verify txs
         #[ink(message)]
         pub fn verify_commitment(
@@ -78,7 +78,7 @@ mod client {
         }
 
         #[ink(message)]
-        pub fn get_last_header (&self) -> Header {
+        pub fn get_last_header(&self) -> Header {
             return self.last_header.clone();
         }
     }
@@ -98,7 +98,6 @@ mod client {
             assert_eq!(state.get_last_header(), String::from("0x2"));
         }
 
-
         #[ink::test]
         fn verify() {
             let mut state = Client::new(String::from("0x1"));
@@ -109,7 +108,7 @@ mod client {
                 receiver_address: String::from("0x3"),
                 contract_sequence: 21,
             };
-            let proof :MerkleProof = String::from("valid");
+            let proof: MerkleProof = String::from("valid");
             let result = state.verify_commitment(
                 message::DeliverableMessage::FungibleTokenTransfer(msg),
                 0,
