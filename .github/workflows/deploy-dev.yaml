@@ -1,0 +1,44 @@
+name: explorer-deploy-dev
+
+on:
+  push:
+    branches:
+      - "release-dev"
+  workflow_run:
+    workflows: ["Rust"]
+    types:
+      - requested
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Person to greet"
+        required: true
+        default: "bossm0n5t3r"
+      home:
+        description: "location"
+        required: false
+        default: "The Octoverse"
+
+jobs:
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - name: Deploy API server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_SERVER_A_HOST }}
+          port: ${{ secrets.DEV_SERVER_A_PORT }}
+          password: ${{ secrets.DEV_SERVER_A_PW }}
+          username: ${{ secrets.DEV_SERVER_A_ID }}
+          script: |
+            pwd
+            cd polkadot-dev
+            git fetch --all
+            git checkout release-dev
+            docker rm -f pdao-polkadot-colony-chain-dev-container
+            docker build -t pdao-polkadot-colony-chain-dev -f colony-chain/Dockerfile .
+            docker image prune -f
+            docker run -p 4200:4200 --name pdao-polkadot-colony-chain-dev-container -d pdao-polkadot-colony-chain-dev
